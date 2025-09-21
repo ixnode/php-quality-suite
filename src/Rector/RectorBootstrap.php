@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Ixnode\PhpQualitySuite\Rector;
 
-use Ixnode\PhpQualitySuite\RectorConfigBuilder;
 use Rector\Configuration\RectorConfigBuilder as RectorConfigBuilderVendor;
 use Rector\Exception\Configuration\InvalidConfigurationException;
 

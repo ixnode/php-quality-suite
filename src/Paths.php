@@ -14,19 +14,19 @@ declare(strict_types=1);
 namespace Ixnode\PhpQualitySuite;
 
 /**
- * Class RectorPaths
+ * Class Paths
  *
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 1.0.0 (2025-09-20)
  * @since 1.0.0 (2025-09-20) First version
  */
-class RectorPaths
+class Paths
 {
-    private RectorParameters $rectorParameters;
+    private Parameters $rectorParameters;
 
     public function __construct()
     {
-        $this->rectorParameters = new RectorParameters();
+        $this->rectorParameters = new Parameters();
     }
 
     /**

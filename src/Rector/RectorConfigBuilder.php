@@ -11,8 +11,10 @@
 
 declare(strict_types=1);
 
-namespace Ixnode\PhpQualitySuite;
+namespace Ixnode\PhpQualitySuite\Rector;
 
+use Ixnode\PhpQualitySuite\Parameters;
+use Ixnode\PhpQualitySuite\Paths;
 use Rector\Config\RectorConfig;
 use Rector\Configuration\RectorConfigBuilder as RectorConfigBuilderVendor;
 use Rector\Exception\Configuration\InvalidConfigurationException;
@@ -28,9 +30,9 @@ use Rector\Symfony\Set\SymfonySetList;
  */
 final class RectorConfigBuilder
 {
-    private RectorParameters $rectorParameters;
+    private Parameters $rectorParameters;
 
-    private RectorPaths $rectorPaths;
+    private Paths $rectorPaths;
 
     private bool $debug = false;
 
@@ -40,8 +42,8 @@ final class RectorConfigBuilder
      */
     public function __construct()
     {
-        $this->rectorParameters = new RectorParameters();
-        $this->rectorPaths = new RectorPaths();
+        $this->rectorParameters = new Parameters();
+        $this->rectorPaths = new Paths();
     }
 
     public function setDebug(bool $debug): self
@@ -162,7 +164,7 @@ final class RectorConfigBuilder
         }
 
         $sets = [
-            RectorParameters::ALLOWED_SYMFONY_VERSIONS[$withSymfony]
+            Parameters::ALLOWED_SYMFONY_VERSIONS[$withSymfony]
         ];
 
         if ($this->rectorParameters->getWithSymfonyCodeQuality()) {

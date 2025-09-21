@@ -18,13 +18,13 @@ use Rector\Symfony\Set\SymfonySetList;
 use RuntimeException;
 
 /**
- * Class RectorParameters
+ * Class Parameters
  *
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 1.0.0 (2025-09-20)
  * @since 1.0.0 (2025-09-20) First version
  */
-final class RectorParameters
+final class Parameters
 {
     private const PATH_CONFIG_1 = 'config/pqs.yml';
 
