@@ -89,12 +89,7 @@ final class RectorParameters
      */
     public function __construct()
     {
-        if (!file_exists(self::PATH_CONFIG)) {
-            throw new RuntimeException(sprintf('Config file not found: %s', self::PATH_CONFIG));
-        }
-
-        $this->config = Yaml::parseFile(self::PATH_CONFIG) ?? [];
-
+        $this->parseYamlFile();
         $this->parseArgs();
         $this->hydrateFromEnv();
     }
@@ -382,5 +377,38 @@ final class RectorParameters
         $items = array_map('trim', explode(',', $value));
         $items = array_filter($items, static fn($v): bool => $v !== '');
         return array_values(array_unique($items));
+    }
+
+    /**
+     * Parses the paths.yaml file.
+     */
+    private function parseYamlFile(): void
+    {
+        if (!file_exists(self::PATH_CONFIG)) {
+            throw new RuntimeException(sprintf('Config file not found: %s', self::PATH_CONFIG));
+        }
+
+        if (!function_exists('yaml_parse_file')) {
+            throw new RuntimeException(
+                'The YAML extension (ext-yaml) is not installed. ' .
+                'Please install it (e.g. "sudo apt install php-yaml" or "pecl install yaml").'
+            );
+        }
+
+        $parsed = yaml_parse_file(self::PATH_CONFIG);
+
+        if ($parsed === false || $parsed === null) {
+            throw new RuntimeException(sprintf('Failed to parse YAML file: %s', self::PATH_CONFIG));
+        }
+
+        if (!is_array($parsed)) {
+            throw new RuntimeException(sprintf(
+                'Unexpected YAML structure in %s: expected array, got %s',
+                self::PATH_CONFIG,
+                gettype($parsed)
+            ));
+        }
+
+        $this->config = $parsed;
     }
 }

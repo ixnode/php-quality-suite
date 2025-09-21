@@ -138,13 +138,14 @@ final class RectorConfigBuilder
         );
 
         $phpVersion = $this->formatPhpVersionId(ComposerJsonPhpVersionResolver::resolveFromCwdOrFail());
+        $includedPaths = $this->rectorParameters->getIncludedPaths();
 
         echo PHP_EOL;
         echo "Rector Overview".PHP_EOL;
         echo "---------------".PHP_EOL;
         echo sprintf("Rector target PHP version: %s", $phpVersion).PHP_EOL;
         echo sprintf("Level:                     %s", $level ?? 'N/A').PHP_EOL;
-        echo sprintf("Include paths:             %s", implode(', ', $this->rectorParameters->getIncludedPaths())).PHP_EOL;
+        echo sprintf("Include paths:             %s", $includedPaths === [] ? 'all' : implode(', ', $this->rectorParameters->getIncludedPaths())).PHP_EOL;
         echo sprintf("Rules:                     %s", $activeRules === [] ? 'N/A' : implode(', ', $activeRules)).PHP_EOL;
 
         if ($this->rectorParameters->getDetails()) {
