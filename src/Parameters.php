@@ -107,17 +107,15 @@ final class Parameters
     ];
 
     private const ARGUMENT_MAPPING = [
-        'type'                               => ['RECTOR_TYPE',                               true,  ['rector']],
-        'details'                            => ['RECTOR_DETAILS',                            false, ['rector']],
-        'level'                              => ['RECTOR_LEVEL',                              true,  ['rector']],
-        'include'                            => ['RECTOR_INCLUDE',                            true,  ['rector']],
-        'rules'                              => ['RECTOR_RULES',                              true,  ['rector']],
-        'with-symfony'                       => ['RECTOR_WITH_SYMFONY',                       true,  ['rector']],
-        'with-symfony-code-quality'          => ['RECTOR_WITH_SYMFONY_CODE_QUALITY',          false, ['rector']],
-        'with-symfony-constructor-injection' => ['RECTOR_WITH_SYMFONY_CONSTRUCTOR_INJECTION', false, ['rector']],
+        'type'                               => ['PQS_TYPE',                               true,  ['rector']],
+        'details'                            => ['PQS_DETAILS',                            false, ['rector']],
+        'level'                              => ['PQS_LEVEL',                              true,  ['rector']],
+        'include'                            => ['PQS_INCLUDE',                            true,  ['rector']],
+        'rules'                              => ['PQS_RULES',                              true,  ['rector']],
+        'with-symfony'                       => ['PQS_WITH_SYMFONY',                       true,  ['rector']],
+        'with-symfony-code-quality'          => ['PQS_WITH_SYMFONY_CODE_QUALITY',          false, ['rector']],
+        'with-symfony-constructor-injection' => ['PQS_WITH_SYMFONY_CONSTRUCTOR_INJECTION', false, ['rector']],
     ];
-
-    private string $type;
 
     /** @var array<string, string> $arguments */
     private array $arguments = [];
@@ -358,15 +356,15 @@ final class Parameters
      */
     private function adoptArguments(): void
     {
-        $this->type = $this->arguments['type'] ?? 'keras';
+        $type = $this->arguments['type'] ?? 'keras';
 
         foreach ($this->arguments as $key => $value) {
             $allowedTypes = self::ARGUMENT_MAPPING[$key][2] ?? [];
-            if ($allowedTypes && !in_array($this->type, $allowedTypes, true)) {
+            if ($allowedTypes && !in_array($type, $allowedTypes, true)) {
                 throw new InvalidArgumentException(sprintf(
                     'Argument "%s" is not allowed in "%s" context.',
                     $key,
-                    $this->type
+                    $type
                 ));
             }
 
