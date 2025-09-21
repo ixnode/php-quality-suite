@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.9] - 2025-09-21
+
+* Add symfony presets
+
 ### [0.1.8] - 2025-09-21
 
 * Replace symfony/yaml with yaml_parse_file to avoid composer conflicts
