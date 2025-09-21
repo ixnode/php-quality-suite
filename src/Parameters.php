@@ -358,131 +358,121 @@ final class Parameters
      */
     private function adoptArguments(): void
     {
-        $this->type = array_key_exists('type', $this->arguments) ? $this->arguments['type'] : 'keras';
+        $this->type = $this->arguments['type'] ?? 'keras';
 
-        if (array_key_exists('details', $this->arguments)) {
-            $type = self::ARGUMENT_MAPPING['details'][2];
-
-            if (!in_array($this->type, $type)) {
-                throw new InvalidArgumentException(sprintf('Argument "%s" is not allowed in "%s" context.', 'details', $this->type));
-            }
-
-            $this->details = true;
-        }
-
-        if (array_key_exists('level', $this->arguments)) {
-            $type = self::ARGUMENT_MAPPING['level'][2];
-
-            if (!in_array($this->type, $type)) {
-                throw new InvalidArgumentException(sprintf('Argument "%s" is not allowed in "%s" context.', 'level', $this->type));
-            }
-
-            $this->level = (int) $this->arguments['level'];
-        }
-
-        if (array_key_exists('includes', $this->arguments)) {
-            $type = self::ARGUMENT_MAPPING['includes'][2];
-
-            if (!in_array($this->type, $type)) {
-                throw new InvalidArgumentException(sprintf('Argument "%s" is not allowed in "%s" context.', 'includes', $this->type));
-            }
-
-            $list = $this->splitList($this->arguments['includes']);
-
-            $allowed = array_keys($this->getPathsIncluded());
-            $invalid = array_diff($list, $allowed);
-
-            if ($invalid !== []) {
-                throw new InvalidArgumentException(
-                    'Invalid include keys: '.implode(', ', $invalid).'. '.
-                    'Allowed keys: '.implode(', ', $allowed)
-                );
-            }
-
-            $this->includedPaths = $list;
-        }
-
-        if (array_key_exists('rules', $this->arguments)) {
-            $type = self::ARGUMENT_MAPPING['rules'][2];
-
-            if (!in_array($this->type, $type)) {
-                throw new InvalidArgumentException(sprintf('Argument "%s" is not allowed in "%s" context.', 'rules', $this->type));
-            }
-
-            $list = $this->splitList($this->arguments['rules']);
-
-            $allowed = array_keys(self::DEFAULT_RULES);
-
-            $this->rules = self::DEFAULT_RULES;
-            $this->ruleLevels = self::DEFAULT_RULE_LEVELS;
-
-            foreach ($list as $entry) {
-                [$key, $level] = array_pad(explode(':', $entry, 2), 2, null);
-
-                if (!in_array($key, $allowed, true)) {
-                    throw new InvalidArgumentException(
-                        sprintf(
-                            'Invalid rule key "%s". Allowed keys: %s',
-                            $key,
-                            implode(', ', $allowed)
-                        )
-                    );
-                }
-
-                if ($level !== null) {
-                    $keysWithLevelsAllowed = self::ALLOWED_KEYS_WITH_LEVELS;
-                    if (!in_array($key, $keysWithLevelsAllowed, true)) {
-                        throw new InvalidArgumentException(
-                            sprintf('Rule key "%s" does not accept levels (got "%s")', $key, $level)
-                        );
-                    }
-
-                    $this->ruleLevels[$key] = (int)$level;
-                } else {
-                    $this->rules[$key] = true;
-                }
-            }
-        }
-
-        if (array_key_exists('with-symfony', $this->arguments)) {
-            $type = self::ARGUMENT_MAPPING['with-symfony'][2];
-
-            if (!in_array($this->type, $type)) {
-                throw new InvalidArgumentException(sprintf('Argument "%s" is not allowed in "%s" context.', 'with-symfony', $this->type));
-            }
-
-            $value = $this->arguments['with-symfony'];
-
-            if (!array_key_exists($value, self::ALLOWED_SYMFONY_VERSIONS)) {
+        foreach ($this->arguments as $key => $value) {
+            $allowedTypes = self::ARGUMENT_MAPPING[$key][2] ?? [];
+            if ($allowedTypes && !in_array($this->type, $allowedTypes, true)) {
                 throw new InvalidArgumentException(sprintf(
-                    'Invalid Symfony version "%s". Allowed versions are: %s',
-                    $value,
-                    implode(', ', array_keys(self::ALLOWED_SYMFONY_VERSIONS))
+                    'Argument "%s" is not allowed in "%s" context.',
+                    $key,
+                    $this->type
                 ));
             }
 
-            $this->withSymfony = $value;
+            switch ($key) {
+                case 'details':
+                    $this->details = true;
+                    break;
+
+                case 'level':
+                    $this->level = (int) $value;
+                    break;
+
+                case 'includes':
+                    $this->adoptIncludes($value);
+                    break;
+
+                case 'rules':
+                    $this->adoptRules($value);
+                    break;
+
+                case 'with-symfony':
+                    $this->adoptSymfonyVersion($value);
+                    break;
+
+                case 'with-symfony-code-quality':
+                    $this->withSymfonyCodeQuality = true;
+                    break;
+
+                case 'with-symfony-constructor-injection':
+                    $this->withSymfonyConstructorInjection = true;
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Adopt argument "includes".
+     */
+    private function adoptIncludes(string $value): void
+    {
+        $list = $this->splitList($value);
+
+        $allowed = array_keys($this->getPathsIncluded());
+        $invalid = array_diff($list, $allowed);
+
+        if ($invalid !== []) {
+            throw new InvalidArgumentException(
+                'Invalid include keys: ' . implode(', ', $invalid) . '. ' .
+                'Allowed keys: ' . implode(', ', $allowed)
+            );
         }
 
-        if (array_key_exists('with-symfony-code-quality', $this->arguments)) {
-            $type = self::ARGUMENT_MAPPING['with-symfony-code-quality'][2];
+        $this->includedPaths = $list;
+    }
 
-            if (!in_array($this->type, $type)) {
-                throw new InvalidArgumentException(sprintf('Argument "%s" is not allowed in "%s" context.', 'with-symfony-code-quality', $this->type));
+    /**
+     * Adopt argument "rules".
+     */
+    private function adoptRules(string $value): void
+    {
+        $list = $this->splitList($value);
+
+        $allowed = array_keys(self::DEFAULT_RULES);
+
+        $this->rules = self::DEFAULT_RULES;
+        $this->ruleLevels = self::DEFAULT_RULE_LEVELS;
+
+        foreach ($list as $entry) {
+            [$key, $level] = array_pad(explode(':', $entry, 2), 2, null);
+
+            if (!in_array($key, $allowed, true)) {
+                throw new InvalidArgumentException(sprintf(
+                    'Invalid rule key "%s". Allowed keys: %s',
+                    $key,
+                    implode(', ', $allowed)
+                ));
             }
 
-            $this->withSymfonyCodeQuality = true;
-        }
+            if ($level !== null) {
+                if (!in_array($key, self::ALLOWED_KEYS_WITH_LEVELS, true)) {
+                    throw new InvalidArgumentException(
+                        sprintf('Rule key "%s" does not accept levels (got "%s")', $key, $level)
+                    );
+                }
 
-        if (array_key_exists('with-symfony-constructor-injection', $this->arguments)) {
-            $type = self::ARGUMENT_MAPPING['with-symfony-constructor-injection'][2];
-
-            if (!in_array($this->type, $type)) {
-                throw new InvalidArgumentException(sprintf('Argument "%s" is not allowed in "%s" context.', 'with-symfony-constructor-injection', $this->type));
+                $this->ruleLevels[$key] = (int) $level;
+            } else {
+                $this->rules[$key] = true;
             }
-
-            $this->withSymfonyConstructorInjection = true;
         }
+    }
+
+    /**
+     * Adopt argument "with-symfony".
+     */
+    private function adoptSymfonyVersion(string $value): void
+    {
+        if (!array_key_exists($value, self::ALLOWED_SYMFONY_VERSIONS)) {
+            throw new InvalidArgumentException(sprintf(
+                'Invalid Symfony version "%s". Allowed versions are: %s',
+                $value,
+                implode(', ', array_keys(self::ALLOWED_SYMFONY_VERSIONS))
+            ));
+        }
+
+        $this->withSymfony = $value;
     }
 
     /**
