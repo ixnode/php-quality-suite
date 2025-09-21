@@ -64,14 +64,10 @@ final class RectorConfigBuilder
             ->withSkip($skip);
 
         /* Uses the composer.json PHP version: require.php */
-        switch (true) {
-            case is_null($level):
-                $rectorConfigBuilder->withPhpSets();
-                break;
-            default:
-                $rectorConfigBuilder->withPhpLevel($level);
-                break;
-        }
+        match (true) {
+            is_null($level) => $rectorConfigBuilder->withPhpSets(),
+            default => $rectorConfigBuilder->withPhpLevel($level),
+        };
 
         $rectorConfigBuilder->withPreparedSets(
             deadCode: $this->rectorParameters->getRule('deadCode'),

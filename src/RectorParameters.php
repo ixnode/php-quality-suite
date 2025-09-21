@@ -74,7 +74,7 @@ final class RectorParameters
 
     private bool $details;
 
-    private int|null $level;
+    private int|null $level = null;
 
     /** @var string[] */
     private array $includedPaths;
@@ -238,7 +238,7 @@ final class RectorParameters
                 continue;
             }
 
-            if (strncmp($arg, '--', 2) !== 0) {
+            if (!str_starts_with($arg, '--')) {
                 continue;
             }
 
@@ -325,12 +325,12 @@ final class RectorParameters
      */
     private function hydrateFromEnv(): void
     {
-        if (!isset($this->level)) {
+        if ($this->level === null) {
             $env = getenv('RECTOR_DETAILS');
             $this->details = $env !== false && $env !== '';
         }
 
-        if (!isset($this->level)) {
+        if ($this->level === null) {
             $env = getenv('RECTOR_LEVEL');
             if ($env !== false && $env !== '') {
                 $this->level = (int)$env;

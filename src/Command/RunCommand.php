@@ -54,8 +54,7 @@ class RunCommand extends Command
         $forwardArgs = array_slice($_SERVER['argv'], 2);
 
         $cmd = array_merge(
-            ['composer', 'run', 'analyze'],
-            ['--'],
+            ['php', __DIR__ . '/../../vendor/bin/rector', 'process', '--config=' . __DIR__ . '/../../rector/bootstrap.php'],
             $forwardArgs
         );
 
