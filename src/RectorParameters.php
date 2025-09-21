@@ -26,7 +26,7 @@ use Symfony\Component\Yaml\Yaml;
  */
 final class RectorParameters
 {
-    private const PATH_CONFIG = __DIR__.'/../paths.yaml';
+    private const PATH_CONFIG = 'paths.yaml';
 
     /** @var array<string, bool>
      */

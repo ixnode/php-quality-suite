@@ -25,7 +25,7 @@ php-quality-suite 0.1.0 (2025-09-20 19:59:14) - Björn Hempel <bjoern@hempel.li>
 ## 2. Quick start
 
 ```bash
-cp paths.yaml.dist paths.yaml
+cp vendor/ixnode/php-quality-suite/paths.yaml.dist paths.yaml
 ```
 
 Adjust the included and excluded paths to your needs.
