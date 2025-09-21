@@ -95,3 +95,38 @@ vendor/bin/php-quality-suite analyze --include=src --level=0 --dry-run
 | `--dry-run`     | Shows the suggested changes without modifying any files. |
 
 This will give you an overview of potential issues in your codebase without applying any changes yet.
+
+Example output:
+
+```bash
+Rector Overview
+---------------
+Rector target PHP version: 8.0.0
+Level:                     0
+Include paths:             src
+Rules:                     N/A
+
+
+ 1/1 [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓] 100%
+1 file with changes
+===================
+
+1) src/test.php:2
+
+    ---------- begin diff ----------
+@@ @@
+
+ final class Test
+ {
+-    var string $test = 'test';
++    public string $test = 'test';
+ }
+    ----------- end diff -----------
+
+Applied rules:
+ * VarToPublicPropertyRector
+
+
+
+ [OK] 1 file would have been changed (dry-run) by Rector
+```
