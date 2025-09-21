@@ -60,39 +60,46 @@ A template configuration file is included in this package:
 cp vendor/ixnode/php-quality-suite/paths.yaml.dist paths.yaml
 ```
 
-Now adjust the file paths.yaml to your project structure.
+Now adjust the file paths.yaml to match your project structure.
+
+#### Example `paths.yaml`
 
 ```yaml
 paths:
   src: src
   tests: tests
+  vendor_gui: lib/VendorGuiBundle
 
 excluded:
   - src/Legacy
   - src/Experimental
 ```
 
-* `paths`: List of directories or files that should be analyzed. Use key-value pairs to give them descriptive names if you like.
-* `excluded`: List of paths to be excluded from analysis.
+* `paths`: Directories or files to be analyzed. You can assign keys (e.g. `vendor_gui`) to reference them in CLI commands.
+* `excluded`: Directories or files that are always excluded from analysis. These paths are passed to Rector automatically.
 
 #### Notes
 
 * All paths are relative to the project root.
 * You can include both directories and single files.
 
+#### Usage with `--include`
+
+By default, all paths listed under paths are analyzed. You can restrict the analysis to specific entries using the --include option: `--include=src,vendor_gui`. This will analyze only the src and vendor_gui directories, while the excluded paths from paths.yaml are always respected.
+
 ### First check
 
 To run your first analysis, use:
 
 ```Bash
-vendor/bin/php-quality-suite analyze --include=src --level=0 --dry-run
+vendor/bin/php-quality-suite analyze --include=src,tests --level=0 --dry-run
 ```
 
-| Argument        | Description                                              |
-|-----------------|----------------------------------------------------------|
-| `--include=src` | Limits the analysis to the src directory.                |
-| `--level=0`     | Runs only the most critical checks (safe to start with). | 
-| `--dry-run`     | Shows the suggested changes without modifying any files. |
+| Argument              | Description                                              |
+|-----------------------|----------------------------------------------------------|
+| `--include=src,tests` | Limits the analysis to the src directory.                |
+| `--level=0`           | Runs only the most critical checks (safe to start with). | 
+| `--dry-run`           | Shows the suggested changes without modifying any files. |
 
 This will give you an overview of potential issues in your codebase without applying any changes yet.
 
