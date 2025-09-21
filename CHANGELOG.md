@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.5] - 2025-09-21
+
+* Fixed relative paths to analyze
+
 ### [0.1.4] - 2025-09-21
 
 * Fixed paths.yml access
