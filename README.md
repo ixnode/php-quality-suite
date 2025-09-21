@@ -11,7 +11,7 @@
 ## 1. Installation
 
 ```bash
-composer require ixnode/php-quality-suite
+composer require --dev ixnode/php-quality-suite
 ```
 
 ```bash

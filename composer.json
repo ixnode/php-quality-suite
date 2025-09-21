@@ -30,10 +30,11 @@
         "ext-gd": "*",
         "ext-posix": "*",
         "adhocore/cli": "^v1.0.0",
-        "symfony/yaml": "^7.3"
+        "symfony/yaml": "^7.3",
+        "rector/rector": "^2.1"
     },
     "require-dev": {
-        "rector/rector": "^2.1"
+
     },
     "bin": [
         "bin/php-quality-suite"
