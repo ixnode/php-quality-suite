@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Ixnode\PhpQualitySuite;
 
 use InvalidArgumentException;
+use Rector\Symfony\Set\SymfonySetList;
 use RuntimeException;
 use Symfony\Component\Yaml\Yaml;
 
@@ -68,7 +69,39 @@ final class RectorParameters
         'symfonyConfigs' => null,
     ];
 
-    private const KEYS_WITH_LEVELS_ALLOWED = ['deadCode', 'codeQuality', 'codingStyle', 'typeDeclarations'];
+    private const ALLOWED_KEYS_WITH_LEVELS = ['deadCode', 'codeQuality', 'codingStyle', 'typeDeclarations'];
+
+    public const ALLOWED_SYMFONY_VERSIONS = [
+        '2.5' => SymfonySetList::SYMFONY_25,
+        '2.6' => SymfonySetList::SYMFONY_26,
+        '2.7' => SymfonySetList::SYMFONY_27,
+        '2.8' => SymfonySetList::SYMFONY_28,
+        '3.0' => SymfonySetList::SYMFONY_30,
+        '3.1' => SymfonySetList::SYMFONY_31,
+        '3.2' => SymfonySetList::SYMFONY_32,
+        '3.3' => SymfonySetList::SYMFONY_33,
+        '3.4' => SymfonySetList::SYMFONY_34,
+        '4.0' => SymfonySetList::SYMFONY_40,
+        '4.1' => SymfonySetList::SYMFONY_41,
+        '4.2' => SymfonySetList::SYMFONY_42,
+        '4.3' => SymfonySetList::SYMFONY_43,
+        '4.4' => SymfonySetList::SYMFONY_44,
+        '5.0' => SymfonySetList::SYMFONY_50,
+        '5.1' => SymfonySetList::SYMFONY_51,
+        '5.2' => SymfonySetList::SYMFONY_52,
+        '5.3' => SymfonySetList::SYMFONY_53,
+        '5.4' => SymfonySetList::SYMFONY_54,
+        '6.0' => SymfonySetList::SYMFONY_60,
+        '6.1' => SymfonySetList::SYMFONY_61,
+        '6.2' => SymfonySetList::SYMFONY_62,
+        '6.3' => SymfonySetList::SYMFONY_63,
+        '6.4' => SymfonySetList::SYMFONY_64,
+        '7.0' => SymfonySetList::SYMFONY_70,
+        '7.1' => SymfonySetList::SYMFONY_71,
+        '7.2' => SymfonySetList::SYMFONY_72,
+        '7.3' => SymfonySetList::SYMFONY_73,
+        '7.4' => SymfonySetList::SYMFONY_74,
+    ];
 
     private array $config;
 
@@ -84,6 +117,12 @@ final class RectorParameters
 
     /** @var array<string, null|int> */
     private array $ruleLevels;
+
+    private string|null $withSymfony = null;
+
+    private bool $withSymfonyCodeQuality;
+
+    private bool $withSymfonyConstructorInjection;
 
     /**
      */
@@ -220,6 +259,30 @@ final class RectorParameters
     }
 
     /**
+     * Returns the wanted symfony version analyzed by rector.
+     */
+    public function getWithSymfony(string|null $default = null): string|null
+    {
+        return $this->withSymfony ?? $default;
+    }
+
+    /**
+     * Returns whether to analyze symfony code quality.
+     */
+    public function getWithSymfonyCodeQuality(bool $default = false): bool
+    {
+        return $this->withSymfonyCodeQuality ?? $default;
+    }
+
+    /**
+     * Returns whether to show detailed information.
+     */
+    public function getWithSymfonyConstructorInjection(bool $default = false): bool
+    {
+        return $this->withSymfonyConstructorInjection ?? $default;
+    }
+
+    /**
      * Parses the custom rector arguments.
      */
     private function parseArgs(): void
@@ -310,6 +373,37 @@ final class RectorParameters
                 unset($_SERVER['argv'][$i]);
                 continue;
             }
+
+            if (str_starts_with($arg, '--with-symfony=')) {
+                $value = substr($arg, strlen('--with-symfony='));
+
+                if (!array_key_exists($value, self::ALLOWED_SYMFONY_VERSIONS)) {
+                    throw new InvalidArgumentException(sprintf(
+                        'Invalid Symfony version "%s". Allowed versions are: %s',
+                        $value,
+                        implode(', ', array_keys(self::ALLOWED_SYMFONY_VERSIONS))
+                    ));
+                }
+
+                $this->withSymfony = $value;
+                putenv('RECTOR_WITH_SYMFONY='.$value);
+                unset($_SERVER['argv'][$i]);
+                continue;
+            }
+
+            if (str_starts_with($arg, '--with-symfony-code-quality')) {
+                $this->withSymfonyCodeQuality = true;
+                putenv("RECTOR_WITH_SYMFONY_CODE_QUALITY=1");
+                unset($_SERVER['argv'][$i]);
+                continue;
+            }
+
+            if (str_starts_with($arg, '--with-symfony-constructor-injection')) {
+                $this->withSymfonyConstructorInjection = true;
+                putenv("RECTOR_WITH_SYMFONY_CONSTRUCTOR_INJECTION=1");
+                unset($_SERVER['argv'][$i]);
+                continue;
+            }
         }
 
         $_SERVER['argv'] = array_values($_SERVER['argv']);
@@ -320,15 +414,15 @@ final class RectorParameters
      */
     private function hydrateFromEnv(): void
     {
-        if ($this->level === null) {
+        if (!isset($this->details)) {
             $env = getenv('RECTOR_DETAILS');
             $this->details = $env !== false && $env !== '';
         }
 
-        if ($this->level === null) {
+        if (is_null($this->level)) {
             $env = getenv('RECTOR_LEVEL');
             if ($env !== false && $env !== '') {
-                $this->level = (int)$env;
+                $this->level = (int) $env;
             }
         }
 
@@ -352,7 +446,7 @@ final class RectorParameters
                     [$key, $level] = array_pad(explode(':', $entry, 2), 2, null);
 
                     if ($level !== null) {
-                        if (!in_array($key, self::KEYS_WITH_LEVELS_ALLOWED, true)) {
+                        if (!in_array($key, self::ALLOWED_KEYS_WITH_LEVELS, true)) {
                             throw new InvalidArgumentException(
                                 sprintf('Rule key "%s" does not accept levels (got "%s")', $key, $level)
                             );
@@ -364,6 +458,23 @@ final class RectorParameters
                     }
                 }
             }
+        }
+
+        if (is_null($this->withSymfony)) {
+            $env = getenv('RECTOR_WITH_SYMFONY');
+            if ($env !== false && $env !== '') {
+                $this->withSymfony = $env;
+            }
+        }
+
+        if (!isset($this->withSymfonyCodeQuality)) {
+            $env = getenv('RECTOR_WITH_SYMFONY_CODE_QUALITY');
+            $this->withSymfonyCodeQuality = $env !== false && $env !== '';
+        }
+
+        if (!isset($this->withSymfonyConstructorInjection)) {
+            $env = getenv('RECTOR_WITH_SYMFONY_CONSTRUCTOR_INJECTION');
+            $this->withSymfonyConstructorInjection = $env !== false && $env !== '';
         }
     }
 

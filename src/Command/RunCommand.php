@@ -41,6 +41,9 @@ class RunCommand extends Command
             ->option('-l,--level [level]', '', 'intval', '')
             ->option('-d,--details', '', 'boolval', '')
             ->option('-r,--dry-run', '', 'boolval', '')
+            ->option('-s,--with-symfony', '', 'strval', '')
+            ->option('--with-symfony-code-quality', '', 'boolval', '')
+            ->option('--with-symfony-constructor-injection', '', 'boolval', '')
         ;
     }
 

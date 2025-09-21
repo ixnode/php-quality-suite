@@ -42,14 +42,6 @@ for example:
 This setting defines the PHP version Rector and PHPStan will use for parsing and refactoring.
 Adjust this value according to the PHP version you want to migrate to or validate against.
 
-```bash
-{
-    "require": {
-        "php": "^8.0"
-    }
-}
-```
-
 ### Paths
 
 The **PHP Quality Suite** needs to know which paths to analyze and which ones to ignore.
@@ -60,7 +52,7 @@ A template configuration file is included in this package:
 cp vendor/ixnode/php-quality-suite/paths.yaml.dist paths.yaml
 ```
 
-Now adjust the file paths.yaml to match your project structure.
+Now adjust the file `paths.yaml` to match your project structure.
 
 #### Example `paths.yaml`
 

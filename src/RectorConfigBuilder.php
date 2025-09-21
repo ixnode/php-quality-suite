@@ -17,6 +17,7 @@ use Rector\Config\RectorConfig;
 use Rector\Configuration\RectorConfigBuilder as RectorConfigBuilderVendor;
 use Rector\Exception\Configuration\InvalidConfigurationException;
 use Rector\Php\PhpVersionResolver\ComposerJsonPhpVersionResolver;
+use Rector\Symfony\Set\SymfonySetList;
 
 /**
  * Class RectorConfigBuilder
@@ -32,6 +33,8 @@ final class RectorConfigBuilder
     private RectorPaths $rectorPaths;
 
     private bool $debug = false;
+
+    private const PATH_APP_KERNEL_DEV_DEBUG_CONTAINER = "var/cache/dev/App_KernelDevDebugContainer.xml";
 
     /**
      */
@@ -55,21 +58,52 @@ final class RectorConfigBuilder
      */
     public function getRectorConfigBuilder(): RectorConfigBuilderVendor
     {
-        $level = $this->rectorParameters->getLevel();
+        $rectorConfigBuilder = RectorConfig::configure();
+
+        $this->addPaths($rectorConfigBuilder);
+        $this->addPhpLevel($rectorConfigBuilder);
+        $this->addPreparedSets($rectorConfigBuilder);
+        $this->addSymfonySets($rectorConfigBuilder);
+
+        return $rectorConfigBuilder;
+    }
+
+    /**
+     * Add included and excluded paths.
+     */
+    private function addPaths(RectorConfigBuilderVendor $rectorConfigBuilderVendor): void
+    {
         $paths = $this->getRectorPathsIncluded();
         $skip = $this->getRectorPathsExcluded();
 
-        $rectorConfigBuilder = RectorConfig::configure()
+        $rectorConfigBuilderVendor
             ->withPaths($paths)
-            ->withSkip($skip);
+            ->withSkip($skip)
+        ;
+    }
+
+    /**
+     * Add PHP level.
+     *
+     * @throws InvalidConfigurationException
+     */
+    private function addPhpLevel(RectorConfigBuilderVendor $rectorConfigBuilderVendor): void
+    {
+        $level = $this->rectorParameters->getLevel();
 
         /* Uses the composer.json PHP version: require.php */
         match (true) {
-            is_null($level) => $rectorConfigBuilder->withPhpSets(),
-            default => $rectorConfigBuilder->withPhpLevel($level),
+            is_null($level) => $rectorConfigBuilderVendor->withPhpSets(),
+            default => $rectorConfigBuilderVendor->withPhpLevel($level),
         };
+    }
 
-        $rectorConfigBuilder->withPreparedSets(
+    /**
+     * Adds withPreparedSets.
+     */
+    private function addPreparedSets(RectorConfigBuilderVendor $rectorConfigBuilderVendor): void
+    {
+        $rectorConfigBuilderVendor->withPreparedSets(
             deadCode: $this->rectorParameters->getRule('deadCode'),
             codeQuality: $this->rectorParameters->getRule('codeQuality'),
             codingStyle: $this->rectorParameters->getRule('codingStyle'),
@@ -89,26 +123,60 @@ final class RectorConfigBuilder
 
         $deadCodeLevel = $this->rectorParameters->getRuleLevel('deadCode');
         if (is_int($deadCodeLevel)) {
-            $rectorConfigBuilder->withDeadCodeLevel($deadCodeLevel);
+            $rectorConfigBuilderVendor->withDeadCodeLevel($deadCodeLevel);
         }
 
         $codeQualityLevel = $this->rectorParameters->getRuleLevel('codeQuality');
         if (is_int($codeQualityLevel)) {
-            $rectorConfigBuilder->withCodeQualityLevel($codeQualityLevel);
+            $rectorConfigBuilderVendor->withCodeQualityLevel($codeQualityLevel);
         }
 
         $codingStyleLevel = $this->rectorParameters->getRuleLevel('codingStyle');
         if (is_int($codingStyleLevel)) {
-            $rectorConfigBuilder->withCodingStyleLevel($codingStyleLevel);
+            $rectorConfigBuilderVendor->withCodingStyleLevel($codingStyleLevel);
         }
 
         $typeCoverageLevel = $this->rectorParameters->getRuleLevel('typeDeclarations');
         if (is_int($typeCoverageLevel)) {
-            $rectorConfigBuilder->withTypeCoverageLevel($typeCoverageLevel);
+            $rectorConfigBuilderVendor->withTypeCoverageLevel($typeCoverageLevel);
+        }
+    }
+
+    /**
+     * Adds symfony sets.
+     *
+     * @throws InvalidConfigurationException
+     */
+    private function addSymfonySets(RectorConfigBuilderVendor $rectorConfigBuilderVendor): void
+    {
+        $withSymfony = $this->rectorParameters->getWithSymfony();
+
+        if (is_null($withSymfony)) {
+            return;
         }
 
-        return $rectorConfigBuilder;
+        if (file_exists(self::PATH_APP_KERNEL_DEV_DEBUG_CONTAINER)) {
+            $rectorConfigBuilderVendor
+                ->withSymfonyContainerXml(self::PATH_APP_KERNEL_DEV_DEBUG_CONTAINER)
+            ;
+        }
+
+        $sets = [
+            RectorParameters::ALLOWED_SYMFONY_VERSIONS[$withSymfony]
+        ];
+
+        if ($this->rectorParameters->getWithSymfonyCodeQuality()) {
+            $sets[] = SymfonySetList::SYMFONY_CODE_QUALITY;
+        }
+
+        if ($this->rectorParameters->getWithSymfonyConstructorInjection()) {
+            $sets[] = SymfonySetList::SYMFONY_CONSTRUCTOR_INJECTION;
+        }
+
+        $rectorConfigBuilderVendor
+            ->withSets($sets);
     }
+
 
     /**
      * Prints the current rector setup.
@@ -139,14 +207,20 @@ final class RectorConfigBuilder
 
         $phpVersion = $this->formatPhpVersionId(ComposerJsonPhpVersionResolver::resolveFromCwdOrFail());
         $includedPaths = $this->rectorParameters->getIncludedPaths();
+        $withSymfony = $this->rectorParameters->getWithSymfony();
+        $withSymfonyCodeQuality = $this->rectorParameters->getWithSymfonyCodeQuality();
+        $withSymfonyConstructorInjection = $this->rectorParameters->getWithSymfonyConstructorInjection();
 
         echo PHP_EOL;
         echo "Rector Overview".PHP_EOL;
         echo "---------------".PHP_EOL;
-        echo sprintf("Rector target PHP version: %s", $phpVersion).PHP_EOL;
-        echo sprintf("Level:                     %s", $level ?? 'N/A').PHP_EOL;
-        echo sprintf("Include paths:             %s", $includedPaths === [] ? 'all' : implode(', ', $this->rectorParameters->getIncludedPaths())).PHP_EOL;
-        echo sprintf("Rules:                     %s", $activeRules === [] ? 'N/A' : implode(', ', $activeRules)).PHP_EOL;
+        echo sprintf("Rector target PHP version:          %s", $phpVersion).PHP_EOL;
+        echo sprintf("Level:                              %s", $level ?? 'N/A').PHP_EOL;
+        echo sprintf("Include paths:                      %s", $includedPaths === [] ? 'all' : implode(', ', $this->rectorParameters->getIncludedPaths())).PHP_EOL;
+        echo sprintf("Rules:                              %s", $activeRules === [] ? 'N/A' : implode(', ', $activeRules)).PHP_EOL;
+        echo sprintf("With symfony version:               %s", $withSymfony ?? 'N/A').PHP_EOL;
+        echo sprintf("With symfony code quality:          %s", $withSymfonyCodeQuality ? 'yes' : 'no').PHP_EOL;
+        echo sprintf("With symfony constructor injection: %s", $withSymfonyConstructorInjection ? 'yes' : 'no').PHP_EOL;
 
         if ($this->rectorParameters->getDetails()) {
             echo PHP_EOL;
