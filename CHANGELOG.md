@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.12] - 2025-09-21
+
+* Parameters refactoring
+* General refactoring
+* Rename the path.yaml file to pqs.yml
+
 ### [0.1.11] - 2025-09-21
 
 * Switch php-quality-suite analyze command to php-quality-suite rector
