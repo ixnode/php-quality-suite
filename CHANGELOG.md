@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.3] - 2025-09-21
+
+* Install rector also when package is used as dependency
+
 ### [0.1.2] - 2025-09-21
 
 * Ensure Rector binary is resolved correctly in root and package context
