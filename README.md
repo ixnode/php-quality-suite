@@ -24,14 +24,74 @@ php-quality-suite 0.1.0 (2025-09-20 19:59:14) - Björn Hempel <bjoern@hempel.li>
 
 ## 2. Quick start
 
+### PHP Version
+
+The static analysis tools determine the target PHP version from your project's `composer.json`.
+
+Make sure your `composer.json` contains the desired PHP version in the `require.php` field,
+for example:
+
+```json
+{
+    "require": {
+        "php": "^8.0"
+    }
+}
+```
+
+This setting defines the PHP version Rector and PHPStan will use for parsing and refactoring.
+Adjust this value according to the PHP version you want to migrate to or validate against.
+
+```bash
+{
+    "require": {
+        "php": "^8.0"
+    }
+}
+```
+
+### Paths
+
+The **PHP Quality Suite** needs to know which paths to analyze and which ones to ignore.
+
+A template configuration file is included in this package:
+
 ```bash
 cp vendor/ixnode/php-quality-suite/paths.yaml.dist paths.yaml
 ```
 
-Adjust the included and excluded paths to your needs.
+Now adjust the file paths.yaml to your project structure.
 
-Run command:
+```yaml
+paths:
+  src: src
+  tests: tests
+
+excluded:
+  - src/Legacy
+  - src/Experimental
+```
+
+* `paths`: List of directories or files that should be analyzed. Use key-value pairs to give them descriptive names if you like.
+* `excluded`: List of paths to be excluded from analysis.
+
+#### Notes
+
+* All paths are relative to the project root.
+* You can include both directories and single files.
+
+### First check
+
+To run your first analysis, use:
 
 ```Bash
 vendor/bin/php-quality-suite analyze --include=src --level=0 --dry-run
 ```
+
+| Argument        | Description                                              |
+|-----------------|----------------------------------------------------------|
+| `--include=src` | Limits the analysis to the src directory.                |
+| `--level=0`     | Runs only the most critical checks (safe to start with). | 
+| `--dry-run`     | Shows the suggested changes without modifying any files. |
+
+This will give you an overview of potential issues in your codebase without applying any changes yet.

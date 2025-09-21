@@ -213,7 +213,7 @@ final class RectorConfigBuilder
         $selected = $paths === [] ? $this->rectorPaths->getAll() : $this->rectorPaths->getOnly(...$paths);
 
         return array_map(
-            static fn(string $path): string => __DIR__.'/../'.$path,
+            static fn(string $path): string => $path,
             $selected
         );
     }
@@ -224,7 +224,7 @@ final class RectorConfigBuilder
     private function getRectorPathsExcluded(): array
     {
         return array_map(
-            static fn(string $path): string => __DIR__.'/../'.$path,
+            static fn(string $path): string => $path,
             $this->rectorParameters->getPathsExcluded()
         );
     }
