@@ -89,36 +89,38 @@ The **PHP Quality Suite** needs to know which paths to analyze and which ones to
 A template configuration file is included in this package:
 
 ```bash
-cp vendor/ixnode/php-quality-suite/paths.yaml.dist paths.yaml
+cp vendor/ixnode/php-quality-suite/config/pqs.yml.dist pqs.yaml
 ```
 
-Now adjust the file `paths.yaml` to match your project structure.
+Now adjust the file `pqs.yaml` to match your project structure.
 
-#### Example `paths.yaml`
+#### Example `pqs.yaml`
 
 ```yaml
-paths:
+paths-included:
   src: src
   tests: tests
   vendor_gui: lib/VendorGuiBundle
 
-excluded:
+paths-excluded:
   - src/Legacy
   - src/Experimental
 ```
 
-* `paths`: Directories or files to be analyzed. You can assign keys (e.g. `vendor_gui`) to reference them in CLI commands.
-* `excluded`: Directories or files that are always excluded from analysis. These paths are passed to Rector automatically.
+* `paths-included`: Directories or files to be analyzed. You can assign keys (e.g. `vendor_gui`) to reference them in CLI commands.
+* `paths-excluded`: Directories or files that are always excluded from analysis. These paths are passed to Rector automatically.
 
 #### Notes
 
 * All paths are relative to the project root.
 * You can include both directories and single files.
-* If `paths.yaml` is missing, the default configuration `paths.yaml.dist` from the package will be used.
+* If `pqs.yaml` is missing, the default configuration `pqs.yaml.dist` from the package will be used.
 
 #### Usage with `--include`
 
-By default, all paths listed under paths are analyzed. You can restrict the analysis to specific entries using the --include option: `--include=src,vendor_gui`. This will analyze only the src and vendor_gui directories, while the excluded paths from paths.yaml are always respected.
+By default, all paths listed under paths are analyzed. You can restrict the analysis to specific entries using the
+`--include` option: `--include=src,vendor_gui`. This will analyze only the `src` and `vendor_gui` directories, while
+the excluded paths from `pqs.yaml` are always respected.
 
 ## 4. Best Practices
 

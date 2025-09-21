@@ -26,9 +26,11 @@ use RuntimeException;
  */
 final class RectorParameters
 {
-    private const PATH_CONFIG = 'paths.yaml';
+    private const PATH_CONFIG_1 = 'config/pqs.yml';
 
-    private const PATH_CONFIG_DIST = __DIR__.'/../paths.yaml.dist';
+    private const PATH_CONFIG_2 = 'pqs.yml';
+
+    private const PATH_CONFIG_DIST = __DIR__.'/../config/pqs.yml.dist';
 
     /** @var array<string, bool>
      */
@@ -137,9 +139,9 @@ final class RectorParameters
     /**
      * @return array<string, string>
      */
-    public function getPaths(): array
+    public function getPathsIncluded(): array
     {
-        return $this->config['paths'] ?? [];
+        return $this->config['paths-included'] ?? [];
     }
 
     /**
@@ -147,7 +149,7 @@ final class RectorParameters
      */
     public function getPathsExcluded(): array
     {
-        return $this->config['excluded'] ?? [];
+        return $this->config['paths-excluded'] ?? [];
     }
 
     /**
@@ -319,7 +321,7 @@ final class RectorParameters
             if (str_starts_with($arg, '--include=')) {
                 $list = $this->splitList(substr($arg, strlen('--include=')));
 
-                $allowed = array_keys($this->getPaths());
+                $allowed = array_keys($this->getPathsIncluded());
                 $invalid = array_diff($list, $allowed);
 
                 if ($invalid !== []) {
@@ -492,18 +494,19 @@ final class RectorParameters
     }
 
     /**
-     * Parses the paths.yaml file.
+     * Parses the pqs.yml file.
      */
     private function parseYamlFile(): void
     {
         $pathConfig = match (true) {
-            file_exists(self::PATH_CONFIG) => self::PATH_CONFIG,
+            file_exists(self::PATH_CONFIG_1) => self::PATH_CONFIG_1,
+            file_exists(self::PATH_CONFIG_2) => self::PATH_CONFIG_2,
             file_exists(self::PATH_CONFIG_DIST) => self::PATH_CONFIG_DIST,
             default => null,
         };
 
         if (is_null($pathConfig)) {
-            throw new RuntimeException(sprintf('Config file not found: %s', self::PATH_CONFIG));
+            throw new RuntimeException(sprintf('Config file not found: %s', self::PATH_CONFIG_1));
         }
 
         if (!function_exists('yaml_parse_file')) {

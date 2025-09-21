@@ -20,5 +20,6 @@
 ###< phpunit/phpunit ###
 
 ###> configuration ###
-/paths.yaml
+/pqs.yml
+/config/pqs.yml
 ###< configuration ###

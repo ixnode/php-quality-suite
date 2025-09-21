@@ -36,7 +36,7 @@ class RectorPaths
      */
     public function getAll(): array
     {
-        return array_values($this->rectorParameters->getPaths());
+        return array_values($this->rectorParameters->getPathsIncluded());
     }
 
     /**
@@ -46,7 +46,7 @@ class RectorPaths
      */
     public function getOnly(string ...$keys): array
     {
-        return array_values(array_intersect_key($this->rectorParameters->getPaths(), array_flip($keys)));
+        return array_values(array_intersect_key($this->rectorParameters->getPathsIncluded(), array_flip($keys)));
     }
 
     /**
@@ -56,6 +56,6 @@ class RectorPaths
      */
     public function getWithout(string ...$keys): array
     {
-        return array_values(array_diff_key($this->rectorParameters->getPaths(), array_flip($keys)));
+        return array_values(array_diff_key($this->rectorParameters->getPathsIncluded(), array_flip($keys)));
     }
 }

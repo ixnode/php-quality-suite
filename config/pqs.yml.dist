@@ -1,7 +1,7 @@
-paths:
+paths-included:
     src: src
     tests: tests
 
-excluded:
+paths-excluded:
     - src/Legacy
     - src/Experimental
