@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.11] - 2025-09-21
+
+* Switch php-quality-suite analyze command to php-quality-suite rector
+
 ### [0.1.10] - 2025-09-21
 
 * Add paths.yaml usage and fallback to package default

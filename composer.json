@@ -1,7 +1,7 @@
 {
     "name": "ixnode/php-quality-suite",
     "description": "PHP Quality Suite - A zero-config PHP quality toolbox combining Rector, PHPStan, and PHPMD. Run static analysis and automated refactorings with simple commands.",
-    "version": "0.1.10",
+    "version": "0.1.11",
     "type": "library",
     "license": "MIT",
     "keywords": ["php", "quality", "static", "code", "analizis", "depricated", "rector"],
