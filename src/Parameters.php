@@ -106,6 +106,19 @@ final class Parameters
         '7.4' => SymfonySetList::SYMFONY_74,
     ];
 
+    private const ARGUMENT_MAPPING = [
+        'type'                               => ['RECTOR_TYPE',                               true,  ['rector']],
+        'details'                            => ['RECTOR_DETAILS',                            false, ['rector']],
+        'level'                              => ['RECTOR_LEVEL',                              true,  ['rector']],
+        'include'                            => ['RECTOR_INCLUDES',                           true,  ['rector']],
+        'rules'                              => ['RECTOR_RULES',                              true,  ['rector']],
+        'with-symfony'                       => ['RECTOR_WITH_SYMFONY',                       true,  ['rector']],
+        'with-symfony-code-quality'          => ['RECTOR_WITH_SYMFONY_CODE_QUALITY',          false, ['rector']],
+        'with-symfony-constructor-injection' => ['RECTOR_WITH_SYMFONY_CONSTRUCTOR_INJECTION', false, ['rector']],
+    ];
+
+    private string $type;
+
     /** @var array<string, string> $arguments */
     private array $arguments = [];
 
@@ -307,48 +320,18 @@ final class Parameters
                 continue;
             }
 
-            switch (true) {
-                case str_starts_with($arg, '--details'):
-                    $this->arguments['details'] = '1';
-                    putenv("RECTOR_DETAILS=1");
-                    unset($_SERVER['argv'][$i]);
-                    break;
+            foreach (self::ARGUMENT_MAPPING as $prefix => [$envKey, $hasValue]) {
+                $argumentName = '--'.$prefix.($hasValue ? '=' : '');
+                if (str_starts_with($arg, $argumentName)) {
+                    $value = $hasValue ? substr($arg, strlen($argumentName)) : '1';
+                    $argumentKey = $prefix;
 
-                case str_starts_with($arg, '--level='):
-                    $this->arguments['level'] = substr($arg, strlen('--level='));
-                    putenv('RECTOR_LEVEL='.$this->arguments['level']);
-                    unset($_SERVER['argv'][$i]);
-                    break;
+                    $this->arguments[$argumentKey] = $value;
+                    putenv($envKey.'='.$value);
 
-                case str_starts_with($arg, '--include='):
-                    $this->arguments['includes'] = substr($arg, strlen('--include='));
-                    putenv('RECTOR_INCLUDES='.$this->arguments['includes']);
                     unset($_SERVER['argv'][$i]);
                     break;
-
-                case str_starts_with($arg, '--rules='):
-                    $this->arguments['rules'] = substr($arg, strlen('--rules='));
-                    putenv('RECTOR_RULES='.$this->arguments['rules']);
-                    unset($_SERVER['argv'][$i]);
-                    break;
-
-                case str_starts_with($arg, '--with-symfony='):
-                    $this->arguments['with-symfony'] = substr($arg, strlen('--with-symfony='));
-                    putenv('RECTOR_WITH_SYMFONY='.$this->arguments['with-symfony']);
-                    unset($_SERVER['argv'][$i]);
-                    break;
-
-                case str_starts_with($arg, '--with-symfony-code-quality'):
-                    $this->arguments['with-symfony-code-quality'] = '1';
-                    putenv("RECTOR_WITH_SYMFONY_CODE_QUALITY=1");
-                    unset($_SERVER['argv'][$i]);
-                    break;
-
-                case str_starts_with($arg, '--with-symfony-constructor-injection'):
-                    $this->arguments['with-symfony-constructor-injection'] = '1';
-                    putenv("RECTOR_WITH_SYMFONY_CONSTRUCTOR_INJECTION=1");
-                    unset($_SERVER['argv'][$i]);
-                    break;
+                }
             }
         }
 
@@ -360,52 +343,12 @@ final class Parameters
      */
     private function parseEnv(): void
     {
-        if (!array_key_exists('details', $this->arguments)) {
-            $env = getenv('RECTOR_DETAILS');
-            if ($env !== false && $env !== '') {
-                $this->arguments['details'] = $env;
-            }
-        }
-
-        if (!array_key_exists('level', $this->arguments)) {
-            $env = getenv('RECTOR_LEVEL');
-            if ($env !== false && $env !== '') {
-                $this->arguments['level'] = $env;
-            }
-        }
-
-        if (!array_key_exists('includes', $this->arguments)) {
-            $env = getenv('RECTOR_INCLUDES');
-            if ($env !== false && $env !== '') {
-                $this->arguments['includes'] = $env;
-            }
-        }
-
-        if (!array_key_exists('rules', $this->arguments)) {
-            $env = getenv('RECTOR_RULES');
-            if ($env !== false && $env !== '') {
-                $this->arguments['rules'] = $env;
-            }
-        }
-
-        if (!array_key_exists('with-symfony', $this->arguments)) {
-            $env = getenv('RECTOR_WITH_SYMFONY');
-            if ($env !== false && $env !== '') {
-                $this->arguments['with-symfony'] = $env;
-            }
-        }
-
-        if (!array_key_exists('with-symfony-code-quality', $this->arguments)) {
-            $env = getenv('RECTOR_WITH_SYMFONY_CODE_QUALITY');
-            if ($env !== false && $env !== '') {
-                $this->arguments['with-symfony-code-quality'] = $env;
-            }
-        }
-
-        if (!array_key_exists('with-symfony-constructor-injection', $this->arguments)) {
-            $env = getenv('RECTOR_WITH_SYMFONY_CONSTRUCTOR_INJECTION');
-            if ($env !== false && $env !== '') {
-                $this->arguments['with-symfony-constructor-injection'] = $env;
+        foreach (self::ARGUMENT_MAPPING as $argKey => [$envKey]) {
+            if (!array_key_exists($argKey, $this->arguments)) {
+                $env = getenv($envKey);
+                if ($env !== false && $env !== '') {
+                    $this->arguments[$argKey] = $env;
+                }
             }
         }
     }
@@ -415,15 +358,35 @@ final class Parameters
      */
     private function adoptArguments(): void
     {
+        $this->type = array_key_exists('type', $this->arguments) ? $this->arguments['type'] : 'keras';
+
         if (array_key_exists('details', $this->arguments)) {
+            $type = self::ARGUMENT_MAPPING['details'][2];
+
+            if (!in_array($this->type, $type)) {
+                throw new InvalidArgumentException(sprintf('Argument "%s" is not allowed in "%s" context.', 'details', $this->type));
+            }
+
             $this->details = true;
         }
 
         if (array_key_exists('level', $this->arguments)) {
+            $type = self::ARGUMENT_MAPPING['level'][2];
+
+            if (!in_array($this->type, $type)) {
+                throw new InvalidArgumentException(sprintf('Argument "%s" is not allowed in "%s" context.', 'level', $this->type));
+            }
+
             $this->level = (int) $this->arguments['level'];
         }
 
         if (array_key_exists('includes', $this->arguments)) {
+            $type = self::ARGUMENT_MAPPING['includes'][2];
+
+            if (!in_array($this->type, $type)) {
+                throw new InvalidArgumentException(sprintf('Argument "%s" is not allowed in "%s" context.', 'includes', $this->type));
+            }
+
             $list = $this->splitList($this->arguments['includes']);
 
             $allowed = array_keys($this->getPathsIncluded());
@@ -440,6 +403,12 @@ final class Parameters
         }
 
         if (array_key_exists('rules', $this->arguments)) {
+            $type = self::ARGUMENT_MAPPING['rules'][2];
+
+            if (!in_array($this->type, $type)) {
+                throw new InvalidArgumentException(sprintf('Argument "%s" is not allowed in "%s" context.', 'rules', $this->type));
+            }
+
             $list = $this->splitList($this->arguments['rules']);
 
             $allowed = array_keys(self::DEFAULT_RULES);
@@ -461,7 +430,7 @@ final class Parameters
                 }
 
                 if ($level !== null) {
-                    $keysWithLevelsAllowed = ['deadCode', 'codeQuality', 'codingStyle', 'typeDeclarations'];
+                    $keysWithLevelsAllowed = self::ALLOWED_KEYS_WITH_LEVELS;
                     if (!in_array($key, $keysWithLevelsAllowed, true)) {
                         throw new InvalidArgumentException(
                             sprintf('Rule key "%s" does not accept levels (got "%s")', $key, $level)
@@ -476,6 +445,12 @@ final class Parameters
         }
 
         if (array_key_exists('with-symfony', $this->arguments)) {
+            $type = self::ARGUMENT_MAPPING['with-symfony'][2];
+
+            if (!in_array($this->type, $type)) {
+                throw new InvalidArgumentException(sprintf('Argument "%s" is not allowed in "%s" context.', 'with-symfony', $this->type));
+            }
+
             $value = $this->arguments['with-symfony'];
 
             if (!array_key_exists($value, self::ALLOWED_SYMFONY_VERSIONS)) {
@@ -490,10 +465,22 @@ final class Parameters
         }
 
         if (array_key_exists('with-symfony-code-quality', $this->arguments)) {
+            $type = self::ARGUMENT_MAPPING['with-symfony-code-quality'][2];
+
+            if (!in_array($this->type, $type)) {
+                throw new InvalidArgumentException(sprintf('Argument "%s" is not allowed in "%s" context.', 'with-symfony-code-quality', $this->type));
+            }
+
             $this->withSymfonyCodeQuality = true;
         }
 
         if (array_key_exists('with-symfony-constructor-injection', $this->arguments)) {
+            $type = self::ARGUMENT_MAPPING['with-symfony-constructor-injection'][2];
+
+            if (!in_array($this->type, $type)) {
+                throw new InvalidArgumentException(sprintf('Argument "%s" is not allowed in "%s" context.', 'with-symfony-constructor-injection', $this->type));
+            }
+
             $this->withSymfonyConstructorInjection = true;
         }
     }

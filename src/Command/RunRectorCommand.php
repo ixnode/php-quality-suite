@@ -63,7 +63,7 @@ class RunRectorCommand extends Command
         $forwardArgs = array_slice($_SERVER['argv'], 2);
 
         $cmd = array_merge(
-            ['php', 'vendor/bin/rector', 'process', '--config='.__DIR__.'/../../rector/bootstrap.php'],
+            ['php', 'vendor/bin/rector', 'process', '--config='.__DIR__.'/../../rector/bootstrap.php', '--type=rector'],
             $forwardArgs
         );
 
