@@ -110,7 +110,7 @@ final class Parameters
         'type'                               => ['RECTOR_TYPE',                               true,  ['rector']],
         'details'                            => ['RECTOR_DETAILS',                            false, ['rector']],
         'level'                              => ['RECTOR_LEVEL',                              true,  ['rector']],
-        'include'                            => ['RECTOR_INCLUDES',                           true,  ['rector']],
+        'include'                            => ['RECTOR_INCLUDE',                            true,  ['rector']],
         'rules'                              => ['RECTOR_RULES',                              true,  ['rector']],
         'with-symfony'                       => ['RECTOR_WITH_SYMFONY',                       true,  ['rector']],
         'with-symfony-code-quality'          => ['RECTOR_WITH_SYMFONY_CODE_QUALITY',          false, ['rector']],
@@ -371,6 +371,9 @@ final class Parameters
             }
 
             switch ($key) {
+                case 'type':
+                    break;
+
                 case 'details':
                     $this->details = true;
                     break;
@@ -379,8 +382,8 @@ final class Parameters
                     $this->level = (int) $value;
                     break;
 
-                case 'includes':
-                    $this->adoptIncludes($value);
+                case 'include':
+                    $this->adoptInclude($value);
                     break;
 
                 case 'rules':
@@ -398,14 +401,17 @@ final class Parameters
                 case 'with-symfony-constructor-injection':
                     $this->withSymfonyConstructorInjection = true;
                     break;
+
+                default:
+                    throw new InvalidArgumentException(sprintf('Invalid argument "%s" given.', $key));
             }
         }
     }
 
     /**
-     * Adopt argument "includes".
+     * Adopt argument "include".
      */
-    private function adoptIncludes(string $value): void
+    private function adoptInclude(string $value): void
     {
         $list = $this->splitList($value);
 
@@ -414,8 +420,11 @@ final class Parameters
 
         if ($invalid !== []) {
             throw new InvalidArgumentException(
-                'Invalid include keys: ' . implode(', ', $invalid) . '. ' .
-                'Allowed keys: ' . implode(', ', $allowed)
+                sprintf(
+                    'Invalid include keys: %s. Allowed keys: %s',
+                    implode(', ', $invalid),
+                    implode(', ', $allowed)
+                ),
             );
         }
 
