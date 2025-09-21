@@ -16,7 +16,6 @@ namespace Ixnode\PhpQualitySuite;
 use InvalidArgumentException;
 use Rector\Symfony\Set\SymfonySetList;
 use RuntimeException;
-use Symfony\Component\Yaml\Yaml;
 
 /**
  * Class RectorParameters
@@ -28,6 +27,8 @@ use Symfony\Component\Yaml\Yaml;
 final class RectorParameters
 {
     private const PATH_CONFIG = 'paths.yaml';
+
+    private const PATH_CONFIG_DIST = __DIR__.'/../paths.yaml.dist';
 
     /** @var array<string, bool>
      */
@@ -495,7 +496,13 @@ final class RectorParameters
      */
     private function parseYamlFile(): void
     {
-        if (!file_exists(self::PATH_CONFIG)) {
+        $pathConfig = match (true) {
+            file_exists(self::PATH_CONFIG) => self::PATH_CONFIG,
+            file_exists(self::PATH_CONFIG_DIST) => self::PATH_CONFIG_DIST,
+            default => null,
+        };
+
+        if (is_null($pathConfig)) {
             throw new RuntimeException(sprintf('Config file not found: %s', self::PATH_CONFIG));
         }
 
@@ -506,16 +513,16 @@ final class RectorParameters
             );
         }
 
-        $parsed = yaml_parse_file(self::PATH_CONFIG);
+        $parsed = yaml_parse_file($pathConfig);
 
         if ($parsed === false || $parsed === null) {
-            throw new RuntimeException(sprintf('Failed to parse YAML file: %s', self::PATH_CONFIG));
+            throw new RuntimeException(sprintf('Failed to parse YAML file: %s', $pathConfig));
         }
 
         if (!is_array($parsed)) {
             throw new RuntimeException(sprintf(
                 'Unexpected YAML structure in %s: expected array, got %s',
-                self::PATH_CONFIG,
+                $pathConfig,
                 gettype($parsed)
             ));
         }

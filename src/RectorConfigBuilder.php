@@ -208,17 +208,18 @@ final class RectorConfigBuilder
         $phpVersion = $this->formatPhpVersionId(ComposerJsonPhpVersionResolver::resolveFromCwdOrFail());
         $includedPaths = $this->rectorParameters->getIncludedPaths();
         $withSymfony = $this->rectorParameters->getWithSymfony();
+        $withSymfonyPrint = $withSymfony !== null && $withSymfony !== '' && $withSymfony !== '0' ? $withSymfony.'.x' : 'N/A';
         $withSymfonyCodeQuality = $this->rectorParameters->getWithSymfonyCodeQuality();
         $withSymfonyConstructorInjection = $this->rectorParameters->getWithSymfonyConstructorInjection();
 
         echo PHP_EOL;
         echo "Rector Overview".PHP_EOL;
         echo "---------------".PHP_EOL;
-        echo sprintf("Rector target PHP version:          %s", $phpVersion).PHP_EOL;
         echo sprintf("Level:                              %s", $level ?? 'N/A').PHP_EOL;
         echo sprintf("Include paths:                      %s", $includedPaths === [] ? 'all' : implode(', ', $this->rectorParameters->getIncludedPaths())).PHP_EOL;
         echo sprintf("Rules:                              %s", $activeRules === [] ? 'N/A' : implode(', ', $activeRules)).PHP_EOL;
-        echo sprintf("With symfony version:               %s", $withSymfony ?? 'N/A').PHP_EOL;
+        echo sprintf("With php version:                   %s", $phpVersion).PHP_EOL;
+        echo sprintf("With symfony version:               %s", $withSymfonyPrint).PHP_EOL;
         echo sprintf("With symfony code quality:          %s", $withSymfonyCodeQuality ? 'yes' : 'no').PHP_EOL;
         echo sprintf("With symfony constructor injection: %s", $withSymfonyConstructorInjection ? 'yes' : 'no').PHP_EOL;
 
@@ -273,9 +274,9 @@ final class RectorConfigBuilder
     {
         $major = intdiv($id, 10000);
         $minor = intdiv($id % 10000, 100);
-        $patch = $id % 100;
+        $patch = 'x'; // $id % 100;
 
-        return sprintf('%d.%d.%d', $major, $minor, $patch);
+        return sprintf('%d.%d.%s', $major, $minor, $patch);
     }
 
     /**

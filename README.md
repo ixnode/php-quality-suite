@@ -6,7 +6,20 @@
 [![Rector - Instant Upgrades and Automated Refactoring](https://img.shields.io/badge/Rector-^2.1-73a165.svg?style=flat)](https://github.com/rectorphp/rector)
 [![LICENSE](https://img.shields.io/github/license/ixnode/php-quality-suite)](https://github.com/ixnode/php-quality-suite/blob/master/LICENSE)
 
-> PHP Quality Suite - A zero-config PHP quality toolbox combining Rector, PHPStan, and PHPMD. Run static analysis and automated refactorings with simple commands.
+
+🚀 **Zero-config. Out-of-the-box. Instant code quality.**  
+
+The PHP Quality Suite combines [Rector](https://github.com/rectorphp/rector), [PHPStan](https://github.com/phpstan/phpstan), and [PHPMD](https://phpmd.org/) into a single developer-friendly toolbox.
+
+Run static analysis and automated refactorings with simple CLI commands – no configuration required. Just:
+
+```bash
+vendor/bin/php-quality-suite analyze --level=0 --dry-run
+```
+
+✔️ No setup needed – works immediately after installation<br>
+✔️ Instant upgrades – migrate between PHP or Symfony versions<br>
+✔️ Quality built-in – type safety, dead code removal, coding standards
 
 ## 1. Installation
 
@@ -23,6 +36,33 @@ php-quality-suite 0.1.0 (2025-09-20 19:59:14) - Björn Hempel <bjoern@hempel.li>
 ```
 
 ## 2. Quick start
+
+Make sure your `composer.json` defines the target PHP version for analysis, e.g.:
+
+```json
+{
+    "require": {
+        "php": "^8.0"
+    }
+}
+```
+
+Analyze your codebase right away:
+
+```bash
+vendor/bin/php-quality-suite analyze --include=src --level=0 --dry-run
+```
+
+✅ Runs instantly<br>
+✅ No setup required<br>
+✅ Safe first checks without modifying files
+
+Remove `--dry-run` once you’re ready to apply the fixes automatically.
+
+> **Hint**: By default, this example uses the src directory. For customizing paths or excluding directories, see
+> the following chapter **Preparation**.
+
+## 3. Preparation
 
 ### PHP Version
 
@@ -74,58 +114,20 @@ excluded:
 
 * All paths are relative to the project root.
 * You can include both directories and single files.
+* If `paths.yaml` is missing, the default configuration `paths.yaml.dist` from the package will be used.
 
 #### Usage with `--include`
 
 By default, all paths listed under paths are analyzed. You can restrict the analysis to specific entries using the --include option: `--include=src,vendor_gui`. This will analyze only the src and vendor_gui directories, while the excluded paths from paths.yaml are always respected.
 
-### First check
+## 4. Best Practices
 
-To run your first analysis, use:
+See:
 
-```Bash
-vendor/bin/php-quality-suite analyze --include=src,tests --level=0 --dry-run
-```
+* [Best Practices with Rector](docs/best-practices/rector.md)
+* [Best Practices with PHPStan](docs/best-practices/rector.md)
+* [Best Practices with PHP Mess detector](docs/best-practices/rector.md)
 
-| Argument              | Description                                              |
-|-----------------------|----------------------------------------------------------|
-| `--include=src,tests` | Limits the analysis to the src directory.                |
-| `--level=0`           | Runs only the most critical checks (safe to start with). | 
-| `--dry-run`           | Shows the suggested changes without modifying any files. |
+## 5. License
 
-This will give you an overview of potential issues in your codebase without applying any changes yet.
-
-Example output:
-
-```bash
-Rector Overview
----------------
-Rector target PHP version: 8.0.0
-Level:                     0
-Include paths:             src
-Rules:                     N/A
-
-
- 1/1 [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓] 100%
-1 file with changes
-===================
-
-1) src/test.php:2
-
-    ---------- begin diff ----------
-@@ @@
-
- final class Test
- {
--    var string $test = 'test';
-+    public string $test = 'test';
- }
-    ----------- end diff -----------
-
-Applied rules:
- * VarToPublicPropertyRector
-
-
-
- [OK] 1 file would have been changed (dry-run) by Rector
-```
+This tool is licensed under the MIT License - see the [LICENSE](/LICENSE) file for details.
