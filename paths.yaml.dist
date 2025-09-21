@@ -1,0 +1,7 @@
+paths:
+    src: src
+    tests: tests
+
+excluded:
+    - src/Legacy
+    - src/Experimental

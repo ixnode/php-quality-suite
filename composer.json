@@ -1,0 +1,47 @@
+{
+    "name": "ixnode/php-quality-suite",
+    "description": "PHP Quality Suite - A zero-config PHP quality toolbox combining Rector, PHPStan, and PHPMD. Run static analysis and automated refactorings with simple commands.",
+    "version": "0.1.0",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["php", "quality", "static", "code", "analizis", "depricated", "rector"],
+    "authors": [
+        {
+            "name": "Björn Hempel",
+            "email": "bjoern@hempel.li",
+            "homepage": "https://www.hempel.li/"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Ixnode\\PhpQualitySuite\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Ixnode\\PhpQualitySuite\\Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": "^8.0",
+        "ext-curl": "*",
+        "ext-exif": "*",
+        "ext-fileinfo": "*",
+        "ext-gd": "*",
+        "ext-posix": "*",
+        "adhocore/cli": "^v1.0.0",
+        "symfony/yaml": "^7.3"
+    },
+    "require-dev": {
+        "rector/rector": "^2.1"
+    },
+    "bin": [
+        "bin/php-quality-suite"
+    ],
+    "scripts": {
+        "analyze": "vendor/bin/rector process --config=rector/bootstrap.php"
+    },
+    "scripts-descriptions": {
+
+    }
+}
