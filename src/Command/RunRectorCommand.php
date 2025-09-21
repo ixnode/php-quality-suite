@@ -18,22 +18,28 @@ use Exception;
 use RuntimeException;
 
 /**
- * Class RunCommand
+ * Class RunRectorCommand
  *
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 1.0.0 (2025-09-20)
  * @since 1.0.0 (2025-09-20) First version
- * @property string|null $path
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @property string|null $rules
+ * @property string|null $include
+ * @property int|null $level
+ * @property bool|null $details
+ * @property bool|null $dryRun
+ * @property string|null $withSymfony
+ * @property bool|null $withSymfonyCodeQuality
+ * @property bool|null $withSymfonyConstructorInjection
  */
-class RunCommand extends Command
+class RunRectorCommand extends Command
 {
     /**
-     * @example bin/php-quality-suite analyze --level=20 --rules=all,deadCode:1 --details --dry-run --include=src
+     * @example bin/php-quality-suite rector --level=20 --rules=all,deadCode:1 --details --dry-run --include=src
      */
     public function __construct()
     {
-        parent::__construct('analyze', 'Run the rector command and analyze code.');
+        parent::__construct('rector', 'Run the rector command and analyze code.');
 
         $this
             ->option('-p,--rules [rules]', '', 'strval', '')

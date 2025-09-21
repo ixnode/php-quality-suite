@@ -14,7 +14,7 @@ The PHP Quality Suite combines [Rector](https://github.com/rectorphp/rector), [P
 Run static analysis and automated refactorings with simple CLI commands – no configuration required. Just:
 
 ```bash
-vendor/bin/php-quality-suite analyze --level=0 --dry-run
+vendor/bin/php-quality-suite rector --level=0 --dry-run
 ```
 
 ✔️ No setup needed – works immediately after installation<br>
@@ -50,7 +50,7 @@ Make sure your `composer.json` defines the target PHP version for analysis, e.g.
 Analyze your codebase right away:
 
 ```bash
-vendor/bin/php-quality-suite analyze --include=src --level=0 --dry-run
+vendor/bin/php-quality-suite rector --include=src --level=0 --dry-run
 ```
 
 ✅ Runs instantly<br>

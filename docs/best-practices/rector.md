@@ -5,7 +5,7 @@
 To run your first analysis, start with a safe, minimal check:
 
 ```Bash
-vendor/bin/php-quality-suite analyze --include=src,tests --level=0 --dry-run
+vendor/bin/php-quality-suite rector --include=src,tests --level=0 --dry-run
 ```
 
 | Argument              | Description                                                        |
@@ -65,10 +65,10 @@ Each level enables more rules — starting with critical fixes, then gradually a
 improvements, and style fixes.
 
 ```bash
-vendor/bin/php-quality-suite analyze --include=src,tests --level=1 --dry-run
-vendor/bin/php-quality-suite analyze --include=src,tests --level=2 --dry-run
+vendor/bin/php-quality-suite rector --include=src,tests --level=1 --dry-run
+vendor/bin/php-quality-suite rector --include=src,tests --level=2 --dry-run
 ...
-vendor/bin/php-quality-suite analyze --include=src,tests --level=20 --dry-run
+vendor/bin/php-quality-suite rector --include=src,tests --level=20 --dry-run
 ```
 
 This incremental approach ensures that you can review and commit changes in small, controlled batches.
@@ -114,7 +114,7 @@ The following command checks your codebase against the Symfony rules for the ver
 This helps ensure compatibility when upgrading from your current Symfony release to a newer one:
 
 ```bash
-vendor/bin/php-quality-suite analyze --with-symfony=<target-version> --dry-run
+vendor/bin/php-quality-suite rector --with-symfony=<target-version> --dry-run
 ```
 
 | Argument                          | Description                                                                     |
@@ -126,7 +126,7 @@ vendor/bin/php-quality-suite analyze --with-symfony=<target-version> --dry-run
 In addition to version-specific upgrades, you can enable extra checks that focus on code quality and best practices:
 
 ```bash
-vendor/bin/php-quality-suite analyze \
+vendor/bin/php-quality-suite rector \
     --with-symfony=<symfony-version> \
     --with-symfony-code-quality \
     --with-symfony-constructor-injection \
