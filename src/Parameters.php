@@ -106,6 +106,9 @@ final class Parameters
         '7.4' => SymfonySetList::SYMFONY_74,
     ];
 
+    /** @var array<string, string> $arguments */
+    private array $arguments = [];
+
     private array $config;
 
     private bool $details;
@@ -133,7 +136,8 @@ final class Parameters
     {
         $this->parseYamlFile();
         $this->parseArgs();
-        $this->hydrateFromEnv();
+        $this->parseEnv();
+        $this->adoptArguments();
     }
 
     /**
@@ -303,109 +307,48 @@ final class Parameters
                 continue;
             }
 
-            if (str_starts_with($arg, '--details')) {
-                $this->details = true;
-                putenv("RECTOR_DETAILS=1");
-                unset($_SERVER['argv'][$i]);
-                continue;
-            }
+            switch (true) {
+                case str_starts_with($arg, '--details'):
+                    $this->arguments['details'] = '1';
+                    putenv("RECTOR_DETAILS=1");
+                    unset($_SERVER['argv'][$i]);
+                    break;
 
-            if (str_starts_with($arg, '--level=')) {
-                $value = (int)substr($arg, strlen('--level='));
-                $this->level = $value;
-                putenv('RECTOR_LEVEL='.$value);
-                unset($_SERVER['argv'][$i]);
-                continue;
-            }
+                case str_starts_with($arg, '--level='):
+                    $this->arguments['level'] = substr($arg, strlen('--level='));
+                    putenv('RECTOR_LEVEL='.$this->arguments['level']);
+                    unset($_SERVER['argv'][$i]);
+                    break;
 
-            if (str_starts_with($arg, '--include=')) {
-                $list = $this->splitList(substr($arg, strlen('--include=')));
+                case str_starts_with($arg, '--include='):
+                    $this->arguments['includes'] = substr($arg, strlen('--include='));
+                    putenv('RECTOR_INCLUDES='.$this->arguments['includes']);
+                    unset($_SERVER['argv'][$i]);
+                    break;
 
-                $allowed = array_keys($this->getPathsIncluded());
-                $invalid = array_diff($list, $allowed);
+                case str_starts_with($arg, '--rules='):
+                    $this->arguments['rules'] = substr($arg, strlen('--rules='));
+                    putenv('RECTOR_RULES='.$this->arguments['rules']);
+                    unset($_SERVER['argv'][$i]);
+                    break;
 
-                if ($invalid !== []) {
-                    throw new InvalidArgumentException(
-                        'Invalid include keys: ' . implode(', ', $invalid) .
-                        '. Allowed keys: ' . implode(', ', $allowed)
-                    );
-                }
+                case str_starts_with($arg, '--with-symfony='):
+                    $this->arguments['with-symfony'] = substr($arg, strlen('--with-symfony='));
+                    putenv('RECTOR_WITH_SYMFONY='.$this->arguments['with-symfony']);
+                    unset($_SERVER['argv'][$i]);
+                    break;
 
-                $this->includedPaths = $list;
-                putenv('RECTOR_INCLUDE=' . implode(',', $list));
-                unset($_SERVER['argv'][$i]);
-                continue;
-            }
+                case str_starts_with($arg, '--with-symfony-code-quality'):
+                    $this->arguments['with-symfony-code-quality'] = '1';
+                    putenv("RECTOR_WITH_SYMFONY_CODE_QUALITY=1");
+                    unset($_SERVER['argv'][$i]);
+                    break;
 
-            if (str_starts_with($arg, '--rules=')) {
-                $list = $this->splitList(substr($arg, strlen('--rules=')));
-
-                $allowed = array_keys(self::DEFAULT_RULES);
-
-                $this->rules = self::DEFAULT_RULES;
-                $this->ruleLevels = self::DEFAULT_RULE_LEVELS;
-
-                foreach ($list as $entry) {
-                    [$key, $level] = array_pad(explode(':', $entry, 2), 2, null);
-
-                    if (!in_array($key, $allowed, true)) {
-                        throw new InvalidArgumentException(
-                            sprintf(
-                                'Invalid rule key "%s". Allowed keys: %s',
-                                $key,
-                                implode(', ', $allowed)
-                            )
-                        );
-                    }
-
-                    if ($level !== null) {
-                        $keysWithLevelsAllowed = ['deadCode', 'codeQuality', 'codingStyle', 'typeDeclarations'];
-                        if (!in_array($key, $keysWithLevelsAllowed, true)) {
-                            throw new InvalidArgumentException(
-                                sprintf('Rule key "%s" does not accept levels (got "%s")', $key, $level)
-                            );
-                        }
-
-                        $this->ruleLevels[$key] = (int)$level;
-                    } else {
-                        $this->rules[$key] = true;
-                    }
-                }
-
-                putenv('RECTOR_RULES=' . implode(',', $list));
-                unset($_SERVER['argv'][$i]);
-                continue;
-            }
-
-            if (str_starts_with($arg, '--with-symfony=')) {
-                $value = substr($arg, strlen('--with-symfony='));
-
-                if (!array_key_exists($value, self::ALLOWED_SYMFONY_VERSIONS)) {
-                    throw new InvalidArgumentException(sprintf(
-                        'Invalid Symfony version "%s". Allowed versions are: %s',
-                        $value,
-                        implode(', ', array_keys(self::ALLOWED_SYMFONY_VERSIONS))
-                    ));
-                }
-
-                $this->withSymfony = $value;
-                putenv('RECTOR_WITH_SYMFONY='.$value);
-                unset($_SERVER['argv'][$i]);
-                continue;
-            }
-
-            if (str_starts_with($arg, '--with-symfony-code-quality')) {
-                $this->withSymfonyCodeQuality = true;
-                putenv("RECTOR_WITH_SYMFONY_CODE_QUALITY=1");
-                unset($_SERVER['argv'][$i]);
-                continue;
-            }
-
-            if (str_starts_with($arg, '--with-symfony-constructor-injection')) {
-                $this->withSymfonyConstructorInjection = true;
-                putenv("RECTOR_WITH_SYMFONY_CONSTRUCTOR_INJECTION=1");
-                unset($_SERVER['argv'][$i]);
-                continue;
+                case str_starts_with($arg, '--with-symfony-constructor-injection'):
+                    $this->arguments['with-symfony-constructor-injection'] = '1';
+                    putenv("RECTOR_WITH_SYMFONY_CONSTRUCTOR_INJECTION=1");
+                    unset($_SERVER['argv'][$i]);
+                    break;
             }
         }
 
@@ -415,69 +358,143 @@ final class Parameters
     /**
      * Parses the custom rector env variables.
      */
-    private function hydrateFromEnv(): void
+    private function parseEnv(): void
     {
-        if (!isset($this->details)) {
+        if (!array_key_exists('details', $this->arguments)) {
             $env = getenv('RECTOR_DETAILS');
-            $this->details = $env !== false && $env !== '';
+            if ($env !== false && $env !== '') {
+                $this->arguments['details'] = $env;
+            }
         }
 
-        if (is_null($this->level)) {
+        if (!array_key_exists('level', $this->arguments)) {
             $env = getenv('RECTOR_LEVEL');
             if ($env !== false && $env !== '') {
-                $this->level = (int) $env;
+                $this->arguments['level'] = $env;
             }
         }
 
-        if (!isset($this->includedPaths)) {
-            $env = getenv('RECTOR_INCLUDE');
+        if (!array_key_exists('includes', $this->arguments)) {
+            $env = getenv('RECTOR_INCLUDES');
             if ($env !== false && $env !== '') {
-                $this->includedPaths = $this->splitList($env);
+                $this->arguments['includes'] = $env;
             }
         }
 
-        if (!isset($this->rules) || !isset($this->ruleLevels)) {
+        if (!array_key_exists('rules', $this->arguments)) {
             $env = getenv('RECTOR_RULES');
-
             if ($env !== false && $env !== '') {
-                $list = $this->splitList($env);
+                $this->arguments['rules'] = $env;
+            }
+        }
 
-                $this->rules = self::DEFAULT_RULES;
-                $this->ruleLevels = self::DEFAULT_RULE_LEVELS;
+        if (!array_key_exists('with-symfony', $this->arguments)) {
+            $env = getenv('RECTOR_WITH_SYMFONY');
+            if ($env !== false && $env !== '') {
+                $this->arguments['with-symfony'] = $env;
+            }
+        }
 
-                foreach ($list as $entry) {
-                    [$key, $level] = array_pad(explode(':', $entry, 2), 2, null);
+        if (!array_key_exists('with-symfony-code-quality', $this->arguments)) {
+            $env = getenv('RECTOR_WITH_SYMFONY_CODE_QUALITY');
+            if ($env !== false && $env !== '') {
+                $this->arguments['with-symfony-code-quality'] = $env;
+            }
+        }
 
-                    if ($level !== null) {
-                        if (!in_array($key, self::ALLOWED_KEYS_WITH_LEVELS, true)) {
-                            throw new InvalidArgumentException(
-                                sprintf('Rule key "%s" does not accept levels (got "%s")', $key, $level)
-                            );
-                        }
+        if (!array_key_exists('with-symfony-constructor-injection', $this->arguments)) {
+            $env = getenv('RECTOR_WITH_SYMFONY_CONSTRUCTOR_INJECTION');
+            if ($env !== false && $env !== '') {
+                $this->arguments['with-symfony-constructor-injection'] = $env;
+            }
+        }
+    }
 
-                        $this->ruleLevels[$key] = (int)$level;
-                    } else {
-                        $this->rules[$key] = true;
+    /**
+     * Adopt all collected arguments.
+     */
+    private function adoptArguments(): void
+    {
+        if (array_key_exists('details', $this->arguments)) {
+            $this->details = true;
+        }
+
+        if (array_key_exists('level', $this->arguments)) {
+            $this->level = (int) $this->arguments['level'];
+        }
+
+        if (array_key_exists('includes', $this->arguments)) {
+            $list = $this->splitList($this->arguments['includes']);
+
+            $allowed = array_keys($this->getPathsIncluded());
+            $invalid = array_diff($list, $allowed);
+
+            if ($invalid !== []) {
+                throw new InvalidArgumentException(
+                    'Invalid include keys: '.implode(', ', $invalid).'. '.
+                    'Allowed keys: '.implode(', ', $allowed)
+                );
+            }
+
+            $this->includedPaths = $list;
+        }
+
+        if (array_key_exists('rules', $this->arguments)) {
+            $list = $this->splitList($this->arguments['rules']);
+
+            $allowed = array_keys(self::DEFAULT_RULES);
+
+            $this->rules = self::DEFAULT_RULES;
+            $this->ruleLevels = self::DEFAULT_RULE_LEVELS;
+
+            foreach ($list as $entry) {
+                [$key, $level] = array_pad(explode(':', $entry, 2), 2, null);
+
+                if (!in_array($key, $allowed, true)) {
+                    throw new InvalidArgumentException(
+                        sprintf(
+                            'Invalid rule key "%s". Allowed keys: %s',
+                            $key,
+                            implode(', ', $allowed)
+                        )
+                    );
+                }
+
+                if ($level !== null) {
+                    $keysWithLevelsAllowed = ['deadCode', 'codeQuality', 'codingStyle', 'typeDeclarations'];
+                    if (!in_array($key, $keysWithLevelsAllowed, true)) {
+                        throw new InvalidArgumentException(
+                            sprintf('Rule key "%s" does not accept levels (got "%s")', $key, $level)
+                        );
                     }
+
+                    $this->ruleLevels[$key] = (int)$level;
+                } else {
+                    $this->rules[$key] = true;
                 }
             }
         }
 
-        if (is_null($this->withSymfony)) {
-            $env = getenv('RECTOR_WITH_SYMFONY');
-            if ($env !== false && $env !== '') {
-                $this->withSymfony = $env;
+        if (array_key_exists('with-symfony', $this->arguments)) {
+            $value = $this->arguments['with-symfony'];
+
+            if (!array_key_exists($value, self::ALLOWED_SYMFONY_VERSIONS)) {
+                throw new InvalidArgumentException(sprintf(
+                    'Invalid Symfony version "%s". Allowed versions are: %s',
+                    $value,
+                    implode(', ', array_keys(self::ALLOWED_SYMFONY_VERSIONS))
+                ));
             }
+
+            $this->withSymfony = $value;
         }
 
-        if (!isset($this->withSymfonyCodeQuality)) {
-            $env = getenv('RECTOR_WITH_SYMFONY_CODE_QUALITY');
-            $this->withSymfonyCodeQuality = $env !== false && $env !== '';
+        if (array_key_exists('with-symfony-code-quality', $this->arguments)) {
+            $this->withSymfonyCodeQuality = true;
         }
 
-        if (!isset($this->withSymfonyConstructorInjection)) {
-            $env = getenv('RECTOR_WITH_SYMFONY_CONSTRUCTOR_INJECTION');
-            $this->withSymfonyConstructorInjection = $env !== false && $env !== '';
+        if (array_key_exists('with-symfony-constructor-injection', $this->arguments)) {
+            $this->withSymfonyConstructorInjection = true;
         }
     }
 
