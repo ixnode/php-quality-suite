@@ -89,12 +89,12 @@ The **PHP Quality Suite** needs to know which paths to analyze and which ones to
 A template configuration file is included in this package:
 
 ```bash
-cp vendor/ixnode/php-quality-suite/config/pqs.yml.dist pqs.yaml
+cp vendor/ixnode/php-quality-suite/config/pqs.yml.dist pqs.yml
 ```
 
-Now adjust the file `pqs.yaml` to match your project structure.
+Now adjust the file `pqs.yml` to match your project structure.
 
-#### Example `pqs.yaml`
+#### Example `pqs.yml`
 
 ```yaml
 paths-included:
@@ -114,13 +114,13 @@ paths-excluded:
 
 * All paths are relative to the project root.
 * You can include both directories and single files.
-* If `pqs.yaml` is missing, the default configuration `pqs.yaml.dist` from the package will be used.
+* If `pqs.yml` is missing, the default configuration `pqs.yml.dist` from the package will be used.
 
 #### Usage with `--include`
 
 By default, all paths listed under paths are analyzed. You can restrict the analysis to specific entries using the
 `--include` option: `--include=src,vendor_gui`. This will analyze only the `src` and `vendor_gui` directories, while
-the excluded paths from `pqs.yaml` are always respected.
+the excluded paths from `pqs.yml` are always respected.
 
 ## 4. Best Practices
 
