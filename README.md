@@ -98,17 +98,32 @@ Now adjust the file `pqs.yml` to match your project structure.
 
 ```yaml
 paths-included:
-  src: src
-  tests: tests
-  vendor_gui: lib/VendorGuiBundle
+    src: src
+    tests: tests
+    vendor_gui: lib/VendorGuiBundle
 
 paths-excluded:
-  - src/Legacy
-  - src/Experimental
+    - src/Legacy
+    - src/Experimental
+    
+rules-excluded:
+    - Rector\Php52\Rector\Property\VarToPublicPropertyRector:<=8.0 # only for PHP version <= 8.0
+    - Rector\Php74\Rector\Assign\NullCoalescingOperatorRector:>8.1 # only for php version > 8.1
+    - Rector\Php74\Rector\Closure\ClosureToArrowFunctionRector # always
+    - Rector\Renaming\Rector\MethodCall\RenameMethodRector:symfony<=6.4 # only for Symfony version <= 6.4
+    - Rector\Arguments\Rector\ClassMethod\ArgumentAdderRector:symfony>6.4 # only for Symfony version > 6.4
+    - Rector\Renaming\Rector\Name\RenameClassRector:symfony # for all symfony versions
 ```
 
 * `paths-included`: Directories or files to be analyzed. You can assign keys (e.g. `vendor_gui`) to reference them in CLI commands.
 * `paths-excluded`: Directories or files that are always excluded from analysis. These paths are passed to Rector automatically.
+* `rules-excluded`: Rector rules that should **not be applied**.  
+  * You can exclude rules either unconditionally or based on environment conditions:
+    * **Without condition** → the rule is always excluded.
+    * **With PHP version condition** (`<=8.0`, `>8.1`, …) → the rule is excluded only if the condition matches the current PHP version.
+    * **With Symfony version condition** (`symfony<=6.4`, `symfony>6.4`, …) → the rule is excluded only if the condition matches the current Symfony version.
+    * **With a framework tag only** (`:symfony`) → the rule is excluded for **all versions** of that framework.
+
 
 #### Notes
 
@@ -130,6 +145,20 @@ See:
 * [Best Practices with PHPStan](docs/best-practices/rector.md)
 * [Best Practices with PHP Mess detector](docs/best-practices/rector.md)
 
-## 5. License
+## 5. Development
+
+```bash
+git clone git@github.com:ixnode/php-quality-suite.git && cd php-quality-suite
+```
+
+```bash
+composer install
+```
+
+```bash
+composer test
+```
+
+## 6. License
 
 This tool is licensed under the MIT License - see the [LICENSE](/LICENSE) file for details.

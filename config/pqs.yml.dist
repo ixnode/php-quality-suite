@@ -2,6 +2,15 @@ paths-included:
     src: src
     tests: tests
 
-paths-excluded:
-    - src/Legacy
-    - src/Experimental
+paths-excluded: []
+
+#paths-excluded:
+#    - src/Legacy
+#    - src/Experimental
+
+rules-excluded: []
+
+#rules-excluded:
+#    - Rector\Php52\Rector\Property\VarToPublicPropertyRector:<=8.0 # only for PHP Version <= 8.0
+#    - Rector\Php74\Rector\Assign\NullCoalescingOperatorRector:>8.1 # only for php Version > 8.1
+#    - Rector\Php74\Rector\Closure\ClosureToArrowFunctionRector # always

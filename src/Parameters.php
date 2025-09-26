@@ -14,8 +14,9 @@ declare(strict_types=1);
 namespace Ixnode\PhpQualitySuite;
 
 use InvalidArgumentException;
+use Ixnode\PhpQualitySuite\Configuration\Configuration;
+use Ixnode\PhpQualitySuite\Configuration\Rules\RulesExcluded;
 use Rector\Symfony\Set\SymfonySetList;
-use RuntimeException;
 
 /**
  * Class Parameters
@@ -26,12 +27,6 @@ use RuntimeException;
  */
 final class Parameters
 {
-    private const PATH_CONFIG_1 = 'config/pqs.yml';
-
-    private const PATH_CONFIG_2 = 'pqs.yml';
-
-    private const PATH_CONFIG_DIST = __DIR__.'/../config/pqs.yml.dist';
-
     /** @var array<string, bool>
      */
     public const DEFAULT_RULES = [
@@ -120,7 +115,7 @@ final class Parameters
     /** @var array<string, string> $arguments */
     private array $arguments = [];
 
-    private array $config;
+    private Configuration $configuration;
 
     private bool $details;
 
@@ -145,7 +140,8 @@ final class Parameters
      */
     public function __construct()
     {
-        $this->parseYamlFile();
+        $this->configuration = new Configuration();
+
         $this->parseArgs();
         $this->parseEnv();
         $this->adoptArguments();
@@ -156,7 +152,7 @@ final class Parameters
      */
     public function getPathsIncluded(): array
     {
-        return $this->config['paths-included'] ?? [];
+        return $this->configuration->getPathsIncluded();
     }
 
     /**
@@ -164,7 +160,15 @@ final class Parameters
      */
     public function getPathsExcluded(): array
     {
-        return $this->config['paths-excluded'] ?? [];
+        return $this->configuration->getPathsExcluded();
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getRulesExcluded(float|null $phpVersion = null): array
+    {
+        return (new RulesExcluded($this->configuration->getRulesExcluded()))->get($phpVersion);
     }
 
     /**
@@ -492,45 +496,5 @@ final class Parameters
         $items = array_map('trim', explode(',', $value));
         $items = array_filter($items, static fn($v): bool => $v !== '');
         return array_values(array_unique($items));
-    }
-
-    /**
-     * Parses the pqs.yml file.
-     */
-    private function parseYamlFile(): void
-    {
-        $pathConfig = match (true) {
-            file_exists(self::PATH_CONFIG_1) => self::PATH_CONFIG_1,
-            file_exists(self::PATH_CONFIG_2) => self::PATH_CONFIG_2,
-            file_exists(self::PATH_CONFIG_DIST) => self::PATH_CONFIG_DIST,
-            default => null,
-        };
-
-        if (is_null($pathConfig)) {
-            throw new RuntimeException(sprintf('Config file not found: %s', self::PATH_CONFIG_1));
-        }
-
-        if (!function_exists('yaml_parse_file')) {
-            throw new RuntimeException(
-                'The YAML extension (ext-yaml) is not installed. ' .
-                'Please install it (e.g. "sudo apt install php-yaml" or "pecl install yaml").'
-            );
-        }
-
-        $parsed = yaml_parse_file($pathConfig);
-
-        if ($parsed === false || $parsed === null) {
-            throw new RuntimeException(sprintf('Failed to parse YAML file: %s', $pathConfig));
-        }
-
-        if (!is_array($parsed)) {
-            throw new RuntimeException(sprintf(
-                'Unexpected YAML structure in %s: expected array, got %s',
-                $pathConfig,
-                gettype($parsed)
-            ));
-        }
-
-        $this->config = $parsed;
     }
 }
