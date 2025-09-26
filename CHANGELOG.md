@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.15] - 2025-09-26
+
+* Add excluded rules
+* Add first PHPUnit tests
+* Update README.md file
+* Refactoring
+
 ### [0.1.14] - 2025-09-22
 
 * Fix typos within README.md documentation
