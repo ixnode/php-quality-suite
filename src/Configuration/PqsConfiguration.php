@@ -13,16 +13,19 @@ declare(strict_types=1);
 
 namespace Ixnode\PhpQualitySuite\Configuration;
 
+use Ixnode\PhpQualitySuite\Configuration\Rules\RulesExcluded;
+use Ixnode\PhpQualitySuite\Configuration\Rules\RulesIncluded;
+use Ixnode\PhpQualitySuite\Paths;
 use RuntimeException;
 
 /**
- * Class Configuration
+ * Class PqsConfiguration
  *
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 1.0.0 (2025-09-25)
  * @since 1.0.0 (2025-09-25) First version
  */
-final class Configuration
+final class PqsConfiguration
 {
     private const PATH_CONFIG_1 = 'config/pqs.yml';
 
@@ -34,7 +37,7 @@ final class Configuration
 
     /**
      */
-    public function __construct()
+    public function __construct(private Paths $paths)
     {
         $this->parseYamlFile();
     }
@@ -48,6 +51,18 @@ final class Configuration
     }
 
     /**
+     * @param string[] $include
+     * @return string[]
+     */
+    public function getPathsIncludedFiltered(array $include): array
+    {
+        return array_map(
+            static fn(string $path): string => $path,
+            $include === [] ? $this->paths->getAll() : $this->paths->getOnly(...$include)
+        );
+    }
+
+    /**
      * @return string[]
      */
     public function getPathsExcluded(): array
@@ -58,9 +73,52 @@ final class Configuration
     /**
      * @return string[]
      */
+    public function getPathsExcludedFiltered(): array
+    {
+        return array_map(
+            static fn(string $path): string => $path,
+            $this->getPathsExcluded()
+        );
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getRulesIncluded(): array
+    {
+        return $this->config['rules-included'] ?? [];
+    }
+
+    /**
+     * @param string[] $rules
+     * @return string[]|null
+     */
+    public function getRulesIncludedFiltered(array $rules): array|null
+    {
+        if ($rules === []) {
+            return null;
+        }
+
+        return (new RulesIncluded($this))->getOnly(...$rules);
+    }
+
+    /**
+     * @return string[]
+     */
     public function getRulesExcluded(): array
     {
         return $this->config['rules-excluded'] ?? [];
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getRulesExcludedFiltered(float|null $phpVersion = null, float|null $symfonyVersion = null): array
+    {
+        return (new RulesExcluded($this))->get(
+            phpVersion: $phpVersion,
+            symfonyVersion: $symfonyVersion
+        );
     }
 
     /**

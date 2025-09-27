@@ -35,21 +35,24 @@ use RuntimeException;
 class RunRectorCommand extends Command
 {
     /**
-     * @example bin/php-quality-suite rector --level=20 --rules=all,deadCode:1 --details --dry-run --include=src
+     * @example bin/php-quality-suite rector --level=20 --sets=all,deadCode:1 --details --dry-run --include=src
      */
     public function __construct()
     {
         parent::__construct('rector', 'Run the rector command and analyze code.');
 
         $this
-            ->option('-p,--rules [rules]', '', 'strval', '')
             ->option('-i,--include [include]', '', 'strval', '')
             ->option('-l,--level [level]', '', 'intval', '')
-            ->option('-d,--details', '', 'boolval', '')
-            ->option('-r,--dry-run', '', 'boolval', '')
-            ->option('-s,--with-symfony', '', 'strval', '')
+            ->option('-s,--sets [sets]', '', 'strval', '')
+            ->option('-r,--rules [rules]', '', 'strval', '')
+
+            ->option('--with-symfony', '', 'strval', '')
             ->option('--with-symfony-code-quality', '', 'boolval', '')
             ->option('--with-symfony-constructor-injection', '', 'boolval', '')
+
+            ->option('--details', '', 'boolval', '')
+            ->option('--dry-run', '', 'boolval', '')
         ;
     }
 

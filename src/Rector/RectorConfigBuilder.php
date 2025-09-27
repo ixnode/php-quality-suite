@@ -15,6 +15,7 @@ namespace Ixnode\PhpQualitySuite\Rector;
 
 use Ixnode\PhpQualitySuite\Parameters;
 use Ixnode\PhpQualitySuite\Paths;
+use Ixnode\PhpQualitySuite\Utils\PhpVersion;
 use Rector\Config\RectorConfig;
 use Rector\Configuration\RectorConfigBuilder as RectorConfigBuilderVendor;
 use Rector\Exception\Configuration\InvalidConfigurationException;
@@ -34,7 +35,19 @@ final class RectorConfigBuilder
 
     private Paths $paths;
 
-    private bool $debug = false;
+    /** @var string[] $pathsIncluded */
+    private array $pathsIncluded = [];
+
+    /** @var string[]|null $pathsExcluded */
+    private array|null $pathsExcluded = null;
+
+    /** @var string[]|null $rulesIncluded */
+    private array|null $rulesIncluded = null;
+
+    /** @var string[]|null $rulesExcluded */
+    private array|null $rulesExcluded = null;
+
+    private int|false|null $phpVersion = false;
 
     private const PATH_APP_KERNEL_DEV_DEBUG_CONTAINER = "var/cache/dev/App_KernelDevDebugContainer.xml";
 
@@ -43,14 +56,23 @@ final class RectorConfigBuilder
     public function __construct()
     {
         $this->parameters = new Parameters();
-        $this->paths = new Paths();
+        $this->paths = new Paths($this->parameters);
     }
 
-    public function setDebug(bool $debug): self
+    /**
+     * Returns the parameters.
+     */
+    public function getParameters(): Parameters
     {
-        $this->debug = $debug;
+        return $this->parameters;
+    }
 
-        return $this;
+    /**
+     * Returns the paths.
+     */
+    public function getPaths(): Paths
+    {
+        return $this->paths;
     }
 
     /**
@@ -62,101 +84,139 @@ final class RectorConfigBuilder
     {
         $rectorConfigBuilder = RectorConfig::configure();
 
-        $this->addPaths($rectorConfigBuilder);
-        $this->addPhpLevel($rectorConfigBuilder);
-        $this->addPreparedSets($rectorConfigBuilder);
-        $this->addSymfonySets($rectorConfigBuilder);
+        $this->addPaths();
+        $this->addRules();
+        $this->addPhpLevel();
+
+        $this->assignConfiguration($rectorConfigBuilder);
+        $this->assignPreparedSets($rectorConfigBuilder);
+        $this->assignSymfonySets($rectorConfigBuilder);
 
         return $rectorConfigBuilder;
     }
 
     /**
      * Add included and excluded paths.
+     */
+    private function addPaths(): void
+    {
+        $this->pathsIncluded = $this->parameters->getPathsIncludedFiltered();
+        $this->pathsExcluded = $this->parameters->getPathsExcludedFiltered();
+    }
+
+    /**
+     * Add rules.
      *
      * @throws InvalidConfigurationException
      */
-    private function addPaths(RectorConfigBuilderVendor $rectorConfigBuilderVendor): void
+    private function addRules(): void
     {
-        $paths = $this->getRectorPathsIncluded();
-        $skip = $this->getRectorPathsExcluded();
+        /* Either add included rules or excluded rules. */
+        if (!$this->parameters->hasRulesIncludedFiltered()) {
+            $phpVersion = new PhpVersion(ComposerJsonPhpVersionResolver::resolveFromCwdOrFail());
 
-        $phpVersion = $this->formatPhpVersionIdToNumber(ComposerJsonPhpVersionResolver::resolveFromCwdOrFail());
+            $this->rulesExcluded = $this->parameters->getRulesExcludedFiltered($phpVersion->getNumber());
 
-        $skip = [...$skip, ...$this->parameters->getRulesExcluded($phpVersion)];
+            return;
+        }
 
-        $rectorConfigBuilderVendor
-            ->withPaths($paths)
-            ->withSkip($skip)
-        ;
+        $this->rulesIncluded = $this->parameters->getRulesIncludedFiltered();
     }
 
     /**
      * Add PHP level.
-     *
-     * @throws InvalidConfigurationException
      */
-    private function addPhpLevel(RectorConfigBuilderVendor $rectorConfigBuilderVendor): void
+    private function addPhpLevel(): void
     {
-        $level = $this->parameters->getLevel();
+        if ($this->parameters->hasRulesIncludedFiltered()) {
+            $this->phpVersion = false;
+            return;
+        }
 
-        /* Uses the composer.json PHP version: require.php */
-        match (true) {
-            is_null($level) => $rectorConfigBuilderVendor->withPhpSets(),
-            default => $rectorConfigBuilderVendor->withPhpLevel($level),
-        };
+        $this->phpVersion = $this->parameters->getLevel();
     }
 
     /**
-     * Adds withPreparedSets.
+     * Assign configuration.
+     *
+     * @throws InvalidConfigurationException
      */
-    private function addPreparedSets(RectorConfigBuilderVendor $rectorConfigBuilderVendor): void
+    private function assignConfiguration(RectorConfigBuilderVendor $rectorConfigBuilderVendor): void
     {
+        $rectorConfigBuilderVendor->withPaths($this->pathsIncluded);
+        $rectorConfigBuilderVendor->withSkip([...($this->pathsExcluded ?? []), ...($this->rulesExcluded ?? [])]);
+
+        if (!is_null($this->rulesIncluded)) {
+            $rectorConfigBuilderVendor->withRules($this->rulesIncluded);
+        }
+
+        if ($this->phpVersion !== false) {
+            match (true) {
+                is_null($this->phpVersion) => $rectorConfigBuilderVendor->withPhpSets(),
+                default => $rectorConfigBuilderVendor->withPhpLevel($this->phpVersion),
+            };
+        }
+    }
+
+    /**
+     * Assign withPreparedSets.
+     */
+    private function assignPreparedSets(RectorConfigBuilderVendor $rectorConfigBuilderVendor): void
+    {
+        if ($this->parameters->hasRulesIncludedFiltered()) {
+            return;
+        }
+
         $rectorConfigBuilderVendor->withPreparedSets(
-            deadCode: $this->parameters->getRule('deadCode'),
-            codeQuality: $this->parameters->getRule('codeQuality'),
-            codingStyle: $this->parameters->getRule('codingStyle'),
-            typeDeclarations: $this->parameters->getRule('typeDeclarations'),
-            privatization: $this->parameters->getRule('privatization'),
-            naming: $this->parameters->getRule('naming'),
-            instanceOf: $this->parameters->getRule('instanceOf'),
-            earlyReturn: $this->parameters->getRule('earlyReturn'),
-            strictBooleans: $this->parameters->getRule('strictBooleans'),
-            carbon: $this->parameters->getRule('carbon'),
-            rectorPreset: $this->parameters->getRule('rectorPreset'),
-            phpunitCodeQuality: $this->parameters->getRule('phpunitCodeQuality'),
-            doctrineCodeQuality: $this->parameters->getRule('doctrineCodeQuality'),
-            symfonyCodeQuality: $this->parameters->getRule('symfonyCodeQuality'),
-            symfonyConfigs: $this->parameters->getRule('symfonyConfigs'),
+            deadCode: $this->parameters->getPreparedSet('deadCode'),
+            codeQuality: $this->parameters->getPreparedSet('codeQuality'),
+            codingStyle: $this->parameters->getPreparedSet('codingStyle'),
+            typeDeclarations: $this->parameters->getPreparedSet('typeDeclarations'),
+            privatization: $this->parameters->getPreparedSet('privatization'),
+            naming: $this->parameters->getPreparedSet('naming'),
+            instanceOf: $this->parameters->getPreparedSet('instanceOf'),
+            earlyReturn: $this->parameters->getPreparedSet('earlyReturn'),
+            strictBooleans: $this->parameters->getPreparedSet('strictBooleans'),
+            carbon: $this->parameters->getPreparedSet('carbon'),
+            rectorPreset: $this->parameters->getPreparedSet('rectorPreset'),
+            phpunitCodeQuality: $this->parameters->getPreparedSet('phpunitCodeQuality'),
+            doctrineCodeQuality: $this->parameters->getPreparedSet('doctrineCodeQuality'),
+            symfonyCodeQuality: $this->parameters->getPreparedSet('symfonyCodeQuality'),
+            symfonyConfigs: $this->parameters->getPreparedSet('symfonyConfigs'),
         );
 
-        $deadCodeLevel = $this->parameters->getRuleLevel('deadCode');
+        $deadCodeLevel = $this->parameters->getPreparedSetLevel('deadCode');
         if (is_int($deadCodeLevel)) {
             $rectorConfigBuilderVendor->withDeadCodeLevel($deadCodeLevel);
         }
 
-        $codeQualityLevel = $this->parameters->getRuleLevel('codeQuality');
+        $codeQualityLevel = $this->parameters->getPreparedSetLevel('codeQuality');
         if (is_int($codeQualityLevel)) {
             $rectorConfigBuilderVendor->withCodeQualityLevel($codeQualityLevel);
         }
 
-        $codingStyleLevel = $this->parameters->getRuleLevel('codingStyle');
+        $codingStyleLevel = $this->parameters->getPreparedSetLevel('codingStyle');
         if (is_int($codingStyleLevel)) {
             $rectorConfigBuilderVendor->withCodingStyleLevel($codingStyleLevel);
         }
 
-        $typeCoverageLevel = $this->parameters->getRuleLevel('typeDeclarations');
+        $typeCoverageLevel = $this->parameters->getPreparedSetLevel('typeDeclarations');
         if (is_int($typeCoverageLevel)) {
             $rectorConfigBuilderVendor->withTypeCoverageLevel($typeCoverageLevel);
         }
     }
 
     /**
-     * Adds symfony sets.
+     * Assign symfony sets.
      *
      * @throws InvalidConfigurationException
      */
-    private function addSymfonySets(RectorConfigBuilderVendor $rectorConfigBuilderVendor): void
+    private function assignSymfonySets(RectorConfigBuilderVendor $rectorConfigBuilderVendor): void
     {
+        if ($this->parameters->hasRulesIncludedFiltered()) {
+            return;
+        }
+
         $withSymfony = $this->parameters->getWithSymfony();
 
         if (is_null($withSymfony)) {
@@ -183,143 +243,5 @@ final class RectorConfigBuilder
 
         $rectorConfigBuilderVendor
             ->withSets($sets);
-    }
-
-    /**
-     * Prints the current rector setup.
-     *
-     * @throws InvalidConfigurationException
-     */
-    public function printSetup(): void
-    {
-        $printed = (int)getenv('RECTOR_OVERVIEW_PRINTED');
-
-        if ($printed >= ($this->debug ? 2 : 1)) {
-
-            if ($this->debug) {
-                exit();
-            }
-
-            return;
-        }
-
-        $level = $this->parameters->getLevel();
-
-        $activeRules = array_keys(
-            array_filter(
-                $this->parameters->getRules(),
-                static fn(bool $enabled): bool => $enabled
-            )
-        );
-
-        $phpVersion = $this->formatPhpVersionId(ComposerJsonPhpVersionResolver::resolveFromCwdOrFail());
-        $includedPaths = $this->parameters->getIncludedPaths();
-        $withSymfony = $this->parameters->getWithSymfony();
-        $withSymfonyPrint = $withSymfony !== null && $withSymfony !== '' && $withSymfony !== '0' ? $withSymfony.'.x' : 'N/A';
-        $withSymfonyCodeQuality = $this->parameters->getWithSymfonyCodeQuality();
-        $withSymfonyConstructorInjection = $this->parameters->getWithSymfonyConstructorInjection();
-
-        echo PHP_EOL;
-        echo "Rector Overview".PHP_EOL;
-        echo "---------------".PHP_EOL;
-        echo sprintf("Level:                              %s", $level ?? 'N/A').PHP_EOL;
-        echo sprintf("Include paths:                      %s", $includedPaths === [] ? 'all' : implode(', ', $this->parameters->getIncludedPaths())).PHP_EOL;
-        echo sprintf("Rules:                              %s", $activeRules === [] ? 'N/A' : implode(', ', $activeRules)).PHP_EOL;
-        echo sprintf("With php version:                   %s", $phpVersion).PHP_EOL;
-        echo sprintf("With symfony version:               %s", $withSymfonyPrint).PHP_EOL;
-        echo sprintf("With symfony code quality:          %s", $withSymfonyCodeQuality ? 'yes' : 'no').PHP_EOL;
-        echo sprintf("With symfony constructor injection: %s", $withSymfonyConstructorInjection ? 'yes' : 'no').PHP_EOL;
-
-        if ($this->parameters->getDetails()) {
-            echo PHP_EOL;
-
-            echo "Rule Details".PHP_EOL;
-            echo "------------".PHP_EOL;
-            echo sprintf("deadCode:            %s", $this->getRuleState('deadCode')).PHP_EOL;
-            echo sprintf("codeQuality:         %s", $this->getRuleState('codeQuality')).PHP_EOL;
-            echo sprintf("codingStyle:         %s", $this->getRuleState('codingStyle')).PHP_EOL;
-            echo sprintf("typeDeclarations:    %s", $this->getRuleState('typeDeclarations')).PHP_EOL;
-            echo sprintf("privatization:       %s", $this->getRuleState('privatization')).PHP_EOL;
-            echo sprintf("naming:              %s", $this->getRuleState('naming')).PHP_EOL;
-            echo sprintf("instanceOf:          %s", $this->getRuleState('instanceOf')).PHP_EOL;
-            echo sprintf("earlyReturn:         %s", $this->getRuleState('earlyReturn')).PHP_EOL;
-            echo sprintf("strictBooleans:      %s", $this->getRuleState('strictBooleans')).PHP_EOL;
-            echo sprintf("carbon:              %s", $this->getRuleState('carbon')).PHP_EOL;
-            echo sprintf("rectorPreset:        %s", $this->getRuleState('rectorPreset')).PHP_EOL;
-            echo sprintf("phpunitCodeQuality:  %s", $this->getRuleState('phpunitCodeQuality')).PHP_EOL;
-            echo sprintf("doctrineCodeQuality: %s", $this->getRuleState('doctrineCodeQuality')).PHP_EOL;
-            echo sprintf("symfonyCodeQuality:  %s", $this->getRuleState('symfonyCodeQuality')).PHP_EOL;
-            echo sprintf("symfonyConfigs:      %s", $this->getRuleState('symfonyConfigs')).PHP_EOL;
-        }
-
-        echo PHP_EOL;
-        echo PHP_EOL;
-
-        ++$printed;
-
-        putenv('RECTOR_OVERVIEW_PRINTED='.$printed);
-    }
-
-    /**
-     * Returns the printable rule property (state).
-     */
-    private function getRuleState(string $key): string
-    {
-        $valueOrLevel = $this->parameters->getRuleOrRuleLevel($key);
-
-        if (is_bool($valueOrLevel)) {
-            return $valueOrLevel ? 'Active' : 'Not active';
-        }
-
-        return 'Level: '.$valueOrLevel;
-    }
-
-    /**
-     * Formats the rector php version into a readable format.
-     */
-    private function formatPhpVersionId(int $id): string
-    {
-        $major = intdiv($id, 10000);
-        $minor = intdiv($id % 10000, 100);
-        $patch = 'x'; // $id % 100;
-
-        return sprintf('%d.%d.%s', $major, $minor, $patch);
-    }
-
-    /**
-     * Formats the rector php version into number format.
-     */
-    private function formatPhpVersionIdToNumber(int $id): float
-    {
-        $major = intdiv($id, 10000);
-        $minor = intdiv($id % 10000, 100);
-
-        return $major + $minor * 0.1;
-    }
-
-    /**
-     * Returns the ready to use included analyzation paths.
-     */
-    private function getRectorPathsIncluded(): array
-    {
-        $paths = $this->parameters->getIncludedPaths();
-
-        $selected = $paths === [] ? $this->paths->getAll() : $this->paths->getOnly(...$paths);
-
-        return array_map(
-            static fn(string $path): string => $path,
-            $selected
-        );
-    }
-
-    /**
-     * Returns the ready to use excluded analyzation paths.
-     */
-    private function getRectorPathsExcluded(): array
-    {
-        return array_map(
-            static fn(string $path): string => $path,
-            $this->parameters->getPathsExcluded()
-        );
     }
 }

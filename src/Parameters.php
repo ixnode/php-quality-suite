@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Ixnode\PhpQualitySuite;
 
 use InvalidArgumentException;
-use Ixnode\PhpQualitySuite\Configuration\Configuration;
+use Ixnode\PhpQualitySuite\Configuration\PqsConfiguration;
 use Ixnode\PhpQualitySuite\Configuration\Rules\RulesExcluded;
 use Rector\Symfony\Set\SymfonySetList;
 
@@ -29,7 +29,7 @@ final class Parameters
 {
     /** @var array<string, bool>
      */
-    public const DEFAULT_RULES = [
+    public const DEFAULT_PREPARED_SETS = [
         'all' => false,
         'deadCode' => false,
         'codeQuality' => false,
@@ -49,7 +49,7 @@ final class Parameters
     ];
 
     /** @var array<string, int|null> */
-    public const DEFAULT_RULE_LEVELS = [
+    public const DEFAULT_PREPARED_SET_LEVELS = [
         'deadCode' => null,
         'codeQuality' => null,
         'codingStyle' => null,
@@ -67,7 +67,7 @@ final class Parameters
         'symfonyConfigs' => null,
     ];
 
-    private const ALLOWED_KEYS_WITH_LEVELS = ['deadCode', 'codeQuality', 'codingStyle', 'typeDeclarations'];
+    private const ALLOWED_PREPARED_SET_KEYS_WITH_LEVELS = ['deadCode', 'codeQuality', 'codingStyle', 'typeDeclarations'];
 
     public const ALLOWED_SYMFONY_VERSIONS = [
         '2.5' => SymfonySetList::SYMFONY_25,
@@ -102,33 +102,43 @@ final class Parameters
     ];
 
     private const ARGUMENT_MAPPING = [
-        'type'                               => ['PQS_TYPE',                               true,  ['rector']],
-        'details'                            => ['PQS_DETAILS',                            false, ['rector']],
-        'level'                              => ['PQS_LEVEL',                              true,  ['rector']],
-        'include'                            => ['PQS_INCLUDE',                            true,  ['rector']],
-        'rules'                              => ['PQS_RULES',                              true,  ['rector']],
-        'with-symfony'                       => ['PQS_WITH_SYMFONY',                       true,  ['rector']],
-        'with-symfony-code-quality'          => ['PQS_WITH_SYMFONY_CODE_QUALITY',          false, ['rector']],
-        'with-symfony-constructor-injection' => ['PQS_WITH_SYMFONY_CONSTRUCTOR_INJECTION', false, ['rector']],
+        /* [env-key, has-value, remove-argument, scope-of-validity] */
+
+        'include'                            => ['PQS_INCLUDE',                            true,  true,  ['rector']],
+        'level'                              => ['PQS_LEVEL',                              true,  true,  ['rector']],
+        'sets'                               => ['PQS_SETS',                               true,  true,  ['rector']],
+        'rules'                              => ['PQS_RULES',                              true,  true,  ['rector']],
+
+        'with-symfony'                       => ['PQS_WITH_SYMFONY',                       true,  true,  ['rector']],
+        'with-symfony-code-quality'          => ['PQS_WITH_SYMFONY_CODE_QUALITY',          false, true,  ['rector']],
+        'with-symfony-constructor-injection' => ['PQS_WITH_SYMFONY_CONSTRUCTOR_INJECTION', false, true,  ['rector']],
+
+        'details'                            => ['PQS_DETAILS',                            false, true,  ['rector']],
+        'dry-run'                            => ['PQS_DRY_RUN',                            false, false, ['rector']],
+
+        'type'                               => ['PQS_TYPE',                               true,  true,  ['rector']],
     ];
+
+    private PqsConfiguration $configuration;
+
+    private Paths $paths;
 
     /** @var array<string, string> $arguments */
     private array $arguments = [];
 
-    private Configuration $configuration;
-
-    private bool $details;
+    /** @var string[] */
+    private array $include;
 
     private int|null $level = null;
 
-    /** @var string[] */
-    private array $includedPaths;
-
     /** @var array<string, bool> */
-    private array $rules;
+    private array $preparedSets;
 
     /** @var array<string, null|int> */
-    private array $ruleLevels;
+    private array $preparedSetLevels;
+
+    /** @var string[] */
+    private array $rules;
 
     private string|null $withSymfony = null;
 
@@ -136,11 +146,16 @@ final class Parameters
 
     private bool $withSymfonyConstructorInjection;
 
+    private bool $details;
+
+    private bool $dryRun;
+
     /**
      */
     public function __construct()
     {
-        $this->configuration = new Configuration();
+        $this->paths = new Paths($this);
+        $this->configuration = new PqsConfiguration($this->paths);
 
         $this->parseArgs();
         $this->parseEnv();
@@ -148,6 +163,8 @@ final class Parameters
     }
 
     /**
+     * Configuration alias: getPathsIncluded
+     *
      * @return array<string, string>
      */
     public function getPathsIncluded(): array
@@ -156,6 +173,18 @@ final class Parameters
     }
 
     /**
+     * Configuration alias: getPathsIncludedFiltered
+     *
+     * @return array<string, string>
+     */
+    public function getPathsIncludedFiltered(): array
+    {
+        return $this->configuration->getPathsIncludedFiltered(include: $this->getInclude());
+    }
+
+    /**
+     * Configuration alias: getPathsExcluded
+     *
      * @return string[]
      */
     public function getPathsExcluded(): array
@@ -164,23 +193,82 @@ final class Parameters
     }
 
     /**
+     * Configuration alias: getPathsExcluded
+     *
      * @return string[]
      */
-    public function getRulesExcluded(float|null $phpVersion = null): array
+    public function getPathsExcludedFiltered(): array
     {
-        return (new RulesExcluded($this->configuration->getRulesExcluded()))->get($phpVersion);
+        return $this->configuration->getPathsExcluded();
     }
 
     /**
-     * Returns whether to show detailed information.
+     * Configuration alias: getRulesIncluded
+     *
+     * @return array<string, string>
      */
-    public function getDetails(bool $default = false): bool
+    public function getRulesIncluded(): array
     {
-        return $this->details ?? $default;
+        return $this->configuration->getRulesIncluded();
+    }
+
+    /**
+     * Configuration alias: getRulesIncluded
+     *
+     * @return string[]|null
+     */
+    public function getRulesIncludedFiltered(): array|null
+    {
+        return $this->configuration->getRulesIncludedFiltered(rules: $this->getRules());
+    }
+
+    /**
+     * Configuration alias: hasRulesIncludedFiltered
+     */
+    public function hasRulesIncludedFiltered(): bool
+    {
+        return !is_null($this->getRulesIncludedFiltered());
+    }
+
+    /**
+     * Configuration alias: getRulesExcluded
+     *
+     * @return string[]
+     */
+    public function getRulesExcluded(): array
+    {
+        return $this->configuration->getRulesExcluded();
+    }
+
+    /**
+     * Configuration alias: getRulesExcludedFiltered
+     *
+     * @return string[]
+     */
+    public function getRulesExcludedFiltered(float|null $phpVersion = null, float|null $symfonyVersion = null): array
+    {
+        return $this->configuration->getRulesExcludedFiltered(
+            phpVersion: $phpVersion,
+            symfonyVersion: $symfonyVersion,
+        );
+    }
+
+    /**
+     * Returns all included paths analyzed by rector.
+     *
+     * Parameter: -i,--include
+     *
+     * @return string[]
+     */
+    public function getInclude(array $default = []): array
+    {
+        return $this->include ?? $default;
     }
 
     /**
      * Returns the used PHP level analyzed by rector.
+     *
+     * Parameter: -l,--level
      */
     public function getLevel(int|null $default = null): int|null
     {
@@ -188,49 +276,45 @@ final class Parameters
     }
 
     /**
-     * Returns all included paths analyzed by rector.
+     * Returns the prepared set list analyzed by rector.
      *
-     * @return string[]
-     */
-    public function getIncludedPaths(array $default = []): array
-    {
-        return $this->includedPaths ?? $default;
-    }
-
-    /**
-     * Returns the rule list analyzed by rector.
+     * Parameter: -s,--sets
      *
      * @return array<string, bool>
      */
-    public function getRules(array $default = self::DEFAULT_RULES): array
+    public function getPreparedSets(array $default = self::DEFAULT_PREPARED_SETS): array
     {
-        return $this->rules ?? $default;
+        return $this->preparedSets ?? $default;
     }
 
     /**
-     * Returns the rule level list analyzed by rector.
+     * Returns the prepared set level list analyzed by rector.
+     *
+     * Parameter: -s,--sets
      *
      * @return array<string, int|null>
      */
-    public function getRuleLevels(array $default = self::DEFAULT_RULE_LEVELS): array
+    public function getPreparedSetLevels(array $default = self::DEFAULT_PREPARED_SET_LEVELS): array
     {
-        return $this->ruleLevels ?? $default;
+        return $this->preparedSetLevels ?? $default;
     }
 
     /**
-     * Returns the rule (active or not).
+     * Returns the prepared set (active or not).
+     *
+     * Parameter: -s,--sets
      *
      * @param array<string, bool> $defaultRules
      */
-    public function getRule(string $key, array $defaultRules = self::DEFAULT_RULES): bool
+    public function getPreparedSet(string $key, array $defaultRules = self::DEFAULT_PREPARED_SETS): bool
     {
-        $ruleLevel = $this->getRuleLevel($key);
+        $ruleLevel = $this->getPreparedSetLevel($key);
 
         if (!is_null($ruleLevel)) {
             return false;
         }
 
-        $rules = $this->getRules($defaultRules);
+        $rules = $this->getPreparedSets($defaultRules);
 
         if ($rules['all'] === true) {
             return true;
@@ -244,13 +328,15 @@ final class Parameters
     }
 
     /**
-     * Returns the rule level.
+     * Returns the prepared set level.
+     *
+     * Parameter: -s,--sets
      *
      * @param array<string, int|null> $defaultRuleLevels
      */
-    public function getRuleLevel(string $key, array $defaultRuleLevels = self::DEFAULT_RULE_LEVELS): int|null
+    public function getPreparedSetLevel(string $key, array $defaultRuleLevels = self::DEFAULT_PREPARED_SET_LEVELS): int|null
     {
-        $ruleLevels = $this->getRuleLevels($defaultRuleLevels);
+        $ruleLevels = $this->getPreparedSetLevels($defaultRuleLevels);
 
         if (!array_key_exists($key, $ruleLevels)) {
             throw new InvalidArgumentException('Invalid rule level key: '.$key);
@@ -260,28 +346,44 @@ final class Parameters
     }
 
     /**
-     * Returns the rule (active or not) or rule level.
+     * Returns the prepared set (active or not) or prepared set level.
+     *
+     * Parameter: -s,--sets
      *
      * @param array<string, bool> $defaultRules
      * @param array<string, int|null> $defaultRuleLevels
      */
-    public function getRuleOrRuleLevel(
+    public function getPreparedSetOrPreparedSetLevel(
         string $key,
-        array $defaultRules = self::DEFAULT_RULES,
-        array $defaultRuleLevels = self::DEFAULT_RULE_LEVELS
+        array $defaultRules = self::DEFAULT_PREPARED_SETS,
+        array $defaultRuleLevels = self::DEFAULT_PREPARED_SET_LEVELS
     ): int|bool
     {
-        $ruleLevel = $this->getRuleLevel($key, $defaultRuleLevels);
+        $ruleLevel = $this->getPreparedSetLevel($key, $defaultRuleLevels);
 
         if (!is_null($ruleLevel)) {
             return $ruleLevel;
         }
 
-        return $this->getRule($key, $defaultRules);
+        return $this->getPreparedSet($key, $defaultRules);
+    }
+
+    /**
+     * Returns all rules analyzed by rector.
+     *
+     * Parameter: -r,--rules
+     *
+     * @return string[]
+     */
+    public function getRules(array $default = []): array
+    {
+        return $this->rules ?? $default;
     }
 
     /**
      * Returns the wanted symfony version analyzed by rector.
+     *
+     * Parameter: --with-symfony
      */
     public function getWithSymfony(string|null $default = null): string|null
     {
@@ -290,6 +392,8 @@ final class Parameters
 
     /**
      * Returns whether to analyze symfony code quality.
+     *
+     * Parameter: --with-symfony-code-quality
      */
     public function getWithSymfonyCodeQuality(bool $default = false): bool
     {
@@ -298,10 +402,32 @@ final class Parameters
 
     /**
      * Returns whether to show detailed information.
+     *
+     * Parameter: --with-symfony-constructor-injection
      */
     public function getWithSymfonyConstructorInjection(bool $default = false): bool
     {
         return $this->withSymfonyConstructorInjection ?? $default;
+    }
+
+    /**
+     * Returns whether to show detailed information.
+     *
+     * Parameter: --details
+     */
+    public function isDetails(bool $default = false): bool
+    {
+        return $this->details ?? $default;
+    }
+
+    /**
+     * Returns whether to run in dry mode.
+     *
+     * Parameter: --dry-run
+     */
+    public function isDryRun(bool $default = false): bool
+    {
+        return $this->dryRun ?? $default;
     }
 
     /**
@@ -322,7 +448,7 @@ final class Parameters
                 continue;
             }
 
-            foreach (self::ARGUMENT_MAPPING as $prefix => [$envKey, $hasValue]) {
+            foreach (self::ARGUMENT_MAPPING as $prefix => [$envKey, $hasValue, $removeArgument]) {
                 $argumentName = '--'.$prefix.($hasValue ? '=' : '');
                 if (str_starts_with($arg, $argumentName)) {
                     $value = $hasValue ? substr($arg, strlen($argumentName)) : '1';
@@ -331,7 +457,10 @@ final class Parameters
                     $this->arguments[$argumentKey] = $value;
                     putenv($envKey.'='.$value);
 
-                    unset($_SERVER['argv'][$i]);
+                    if ($removeArgument) {
+                        unset($_SERVER['argv'][$i]);
+                    }
+
                     break;
                 }
             }
@@ -360,10 +489,10 @@ final class Parameters
      */
     private function adoptArguments(): void
     {
-        $type = $this->arguments['type'] ?? 'keras';
+        $type = $this->arguments['type'] ?? 'rector';
 
         foreach ($this->arguments as $key => $value) {
-            $allowedTypes = self::ARGUMENT_MAPPING[$key][2] ?? [];
+            $allowedTypes = self::ARGUMENT_MAPPING[$key][3] ?? [];
             if ($allowedTypes && !in_array($type, $allowedTypes, true)) {
                 throw new InvalidArgumentException(sprintf(
                     'Argument "%s" is not allowed in "%s" context.',
@@ -373,21 +502,15 @@ final class Parameters
             }
 
             switch ($key) {
-                case 'type':
-                    break;
-
-                case 'details':
-                    $this->details = true;
-                    break;
-
-                case 'level':
-                    $this->level = (int) $value;
-                    break;
-
                 case 'include':
                     $this->adoptInclude($value);
                     break;
-
+                case 'level':
+                    $this->level = (int) $value;
+                    break;
+                case 'sets':
+                    $this->adoptPreparedSets($value);
+                    break;
                 case 'rules':
                     $this->adoptRules($value);
                     break;
@@ -395,13 +518,21 @@ final class Parameters
                 case 'with-symfony':
                     $this->adoptSymfonyVersion($value);
                     break;
-
                 case 'with-symfony-code-quality':
                     $this->withSymfonyCodeQuality = true;
                     break;
-
                 case 'with-symfony-constructor-injection':
                     $this->withSymfonyConstructorInjection = true;
+                    break;
+
+                case 'details':
+                    $this->details = true;
+                    break;
+                case 'dry-run':
+                    $this->dryRun = true;
+                    break;
+
+                case 'type':
                     break;
 
                 default:
@@ -430,20 +561,20 @@ final class Parameters
             );
         }
 
-        $this->includedPaths = $list;
+        $this->include = $list;
     }
 
     /**
      * Adopt argument "rules".
      */
-    private function adoptRules(string $value): void
+    private function adoptPreparedSets(string $value): void
     {
         $list = $this->splitList($value);
 
-        $allowed = array_keys(self::DEFAULT_RULES);
+        $allowed = array_keys(self::DEFAULT_PREPARED_SETS);
 
-        $this->rules = self::DEFAULT_RULES;
-        $this->ruleLevels = self::DEFAULT_RULE_LEVELS;
+        $this->preparedSets = self::DEFAULT_PREPARED_SETS;
+        $this->preparedSetLevels = self::DEFAULT_PREPARED_SET_LEVELS;
 
         foreach ($list as $entry) {
             [$key, $level] = array_pad(explode(':', $entry, 2), 2, null);
@@ -457,17 +588,40 @@ final class Parameters
             }
 
             if ($level !== null) {
-                if (!in_array($key, self::ALLOWED_KEYS_WITH_LEVELS, true)) {
+                if (!in_array($key, self::ALLOWED_PREPARED_SET_KEYS_WITH_LEVELS, true)) {
                     throw new InvalidArgumentException(
                         sprintf('Rule key "%s" does not accept levels (got "%s")', $key, $level)
                     );
                 }
 
-                $this->ruleLevels[$key] = (int) $level;
+                $this->preparedSetLevels[$key] = (int) $level;
             } else {
-                $this->rules[$key] = true;
+                $this->preparedSets[$key] = true;
             }
         }
+    }
+
+    /**
+     * Adopt argument "rules".
+     */
+    private function adoptRules(string $value): void
+    {
+        $list = $this->splitList($value);
+
+        $allowed = array_keys($this->getRulesIncluded());
+        $invalid = array_diff($list, $allowed);
+
+        if ($invalid !== []) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'Invalid rule keys: %s. Allowed keys: %s',
+                    implode(', ', $invalid),
+                    implode(', ', $allowed)
+                ),
+            );
+        }
+
+        $this->rules = $list;
     }
 
     /**
