@@ -82,9 +82,9 @@ for example:
 This setting defines the PHP version Rector and PHPStan will use for parsing and refactoring.
 Adjust this value according to the PHP version you want to migrate to or validate against.
 
-### Paths
+### Configuration
 
-The **PHP Quality Suite** needs to know which paths to analyze and which ones to ignore.
+The **PHP Quality Suite** needs to know which paths to analyze and which ones to ignore. The same applies to the rules that are used or ignored.
 
 A template configuration file is included in this package:
 
@@ -92,7 +92,7 @@ A template configuration file is included in this package:
 cp vendor/ixnode/php-quality-suite/config/pqs.yml.dist pqs.yml
 ```
 
-Now adjust the file `pqs.yml` to match your project structure.
+Now adapt the `pqs.yml` file to your project structure and the analyzation target.
 
 #### Example `pqs.yml`
 
@@ -105,25 +105,36 @@ paths-included:
 paths-excluded:
     - src/Legacy
     - src/Experimental
-    
+
+rules-included:
+    ContinueToBreakInSwitchRector: Rector\Php52\Rector\Switch_\ContinueToBreakInSwitchRector
+    TernaryToElvisRector: Rector\Php53\Rector\Ternary\TernaryToElvisRector
+
 rules-excluded:
-    - Rector\Php52\Rector\Property\VarToPublicPropertyRector:<=8.0 # only for PHP version <= 8.0
-    - Rector\Php74\Rector\Assign\NullCoalescingOperatorRector:>8.1 # only for php version > 8.1
     - Rector\Php74\Rector\Closure\ClosureToArrowFunctionRector # always
+    - Rector\Php52\Rector\Property\VarToPublicPropertyRector:<=8.0 # only for PHP version <= 8.0
+    - Rector\Php74\Rector\Assign\NullCoalescingOperatorRector:>8.1 # only for PHP version > 8.1
     - Rector\Renaming\Rector\MethodCall\RenameMethodRector:symfony<=6.4 # only for Symfony version <= 6.4
     - Rector\Arguments\Rector\ClassMethod\ArgumentAdderRector:symfony>6.4 # only for Symfony version > 6.4
-    - Rector\Renaming\Rector\Name\RenameClassRector:symfony # for all symfony versions
+    - Rector\Renaming\Rector\Name\RenameClassRector:symfony # for all Symfony versions
 ```
 
 * `paths-included`: Directories or files to be analyzed. You can assign keys (e.g. `vendor_gui`) to reference them in CLI commands.
-* `paths-excluded`: Directories or files that are always excluded from analysis. These paths are passed to Rector automatically.
-* `rules-excluded`: Rector rules that should **not be applied**.  
-  * You can exclude rules either unconditionally or based on environment conditions:
-    * **Without condition** → the rule is always excluded.
-    * **With PHP version condition** (`<=8.0`, `>8.1`, …) → the rule is excluded only if the condition matches the current PHP version.
-    * **With Symfony version condition** (`symfony<=6.4`, `symfony>6.4`, …) → the rule is excluded only if the condition matches the current Symfony version.
-    * **With a framework tag only** (`:symfony`) → the rule is excluded for **all versions** of that framework.
-
+* `paths-excluded`: Directories or files that are always excluded from analysis. These paths are passed to Rector automatically. If no rule is specified, the default rules of PHP or Symfony are applied.
+* `rules-included`: Rector rules to be analyzed. You can assign keys (e.g. `TernaryToElvisRector`) to reference them in CLI commands.
+* `rules-excluded`: Rector rules that should not be applied. The behavior depends on optional tagging (`php`, `symfony`) and version conditions:
+  * **Rules without tagging and without version**
+    * → Exclusion is always applied.
+  * **Rules without tagging but with version**
+    * → Exclusion is applied only if the current PHP version matches the condition; otherwise, the exclusion is ignored.
+  * **Rules with php tagging and without version**
+    * → Same as rules without tagging and without version.
+  * **Rules with php tagging and with version**
+    * → Same as rules without tagging but with version.
+  * **Rules with symfony tagging and without version**
+    * → Exclusion is applied only if a Symfony version is being analyzed; otherwise, the exclusion is ignored.
+  * **Rules with symfony tagging and with version**
+    * → Exclusion is applied only if a Symfony version is being analyzed and it matches the condition; otherwise, the exclusion is ignored.
 
 #### Notes
 

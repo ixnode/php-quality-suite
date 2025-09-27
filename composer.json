@@ -42,8 +42,8 @@
 
         ".test": [
             "@ixno:header",
-            "@rector",
-            "@phpunit"
+            "@phpunit",
+            "@rector"
         ],
 
         "test": [

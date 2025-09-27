@@ -1,16 +1,29 @@
 paths-included:
     src: src
     tests: tests
+    vendor_gui: lib/VendorGuiBundle
 
 paths-excluded: []
-
 #paths-excluded:
 #    - src/Legacy
 #    - src/Experimental
 
-rules-excluded: []
+rules-included:
+    ArgumentAdderRector: Rector\Arguments\Rector\ClassMethod\ArgumentAdderRector
+    ClosureToArrowFunctionRector: Rector\Php74\Rector\Closure\ClosureToArrowFunctionRector
+    ContinueToBreakInSwitchRector: Rector\Php52\Rector\Switch_\ContinueToBreakInSwitchRector
+    NullCoalescingOperatorRector: Rector\Php74\Rector\Assign\NullCoalescingOperatorRector
+    RemoveUnusedPrivateMethodRector: Rector\DeadCode\Rector\ClassMethod\RemoveUnusedPrivateMethodRector
+    RenameClassRector: Rector\Renaming\Rector\Name\RenameClassRector
+    RenameMethodRector: Rector\Renaming\Rector\MethodCall\RenameMethodRector
+    TernaryToElvisRector: Rector\Php53\Rector\Ternary\TernaryToElvisRector
+    VarToPublicPropertyRector: Rector\Php52\Rector\Property\VarToPublicPropertyRector
 
+rules-excluded: []
 #rules-excluded:
-#    - Rector\Php52\Rector\Property\VarToPublicPropertyRector:<=8.0 # only for PHP Version <= 8.0
-#    - Rector\Php74\Rector\Assign\NullCoalescingOperatorRector:>8.1 # only for php Version > 8.1
 #    - Rector\Php74\Rector\Closure\ClosureToArrowFunctionRector # always
+#    - Rector\Php52\Rector\Property\VarToPublicPropertyRector:<=8.0 # only for PHP version <= 8.0
+#    - Rector\Php74\Rector\Assign\NullCoalescingOperatorRector:>8.1 # only for PHP version > 8.1
+#    - Rector\Renaming\Rector\MethodCall\RenameMethodRector:symfony<=6.4 # only for Symfony version <= 6.4
+#    - Rector\Arguments\Rector\ClassMethod\ArgumentAdderRector:symfony>6.4 # only for Symfony version > 6.4
+#    - Rector\Renaming\Rector\Name\RenameClassRector:symfony # for all Symfony versions

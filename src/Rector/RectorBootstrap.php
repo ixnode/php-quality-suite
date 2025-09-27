@@ -23,8 +23,8 @@ use Rector\Exception\Configuration\InvalidConfigurationException;
  * @version 1.0.0 (2025-09-20)
  * @since 1.0.0 (2025-09-20) First version
  * @example Only critical: vendor/bin/rector process --config=rector/bootstrap.php --dry-run --level=0 --include=src
- * @example Some extra rules: vendor/bin/rector process --config=rector/bootstrap.php --dry-run --level=0 --include=src --rules=deadCode:1,codeQuality,instanceOf
- * @example Some extra rules: vendor/bin/rector process --config=rector/bootstrap.php --dry-run --level=0 --include=src --rules=all,deadCode:1
+ * @example Some extra rules: vendor/bin/rector process --config=rector/bootstrap.php --dry-run --level=0 --include=src --sets=deadCode:1,codeQuality,instanceOf
+ * @example Some extra rules: vendor/bin/rector process --config=rector/bootstrap.php --dry-run --level=0 --include=src --sets=all,deadCode:1
  */
 
 final class RectorBootstrap
@@ -41,7 +41,7 @@ final class RectorBootstrap
      */
     public function run(): RectorConfigBuilderVendor
     {
-        $this->rectorConfigBuilder->printSetup();
+        (new RectorConfigPrinter($this->rectorConfigBuilder))->print();
 
         return $this->rectorConfigBuilder->getRectorConfigBuilder();
     }

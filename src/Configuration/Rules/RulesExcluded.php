@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Ixnode\PhpQualitySuite\Configuration\Rules;
 
 use InvalidArgumentException;
+use Ixnode\PhpQualitySuite\Configuration\PqsConfiguration;
 use Ixnode\PhpQualitySuite\Tests\Unit\Configuration\Rules\RulesExcludedTest;
 
 /**
@@ -26,11 +27,18 @@ use Ixnode\PhpQualitySuite\Tests\Unit\Configuration\Rules\RulesExcludedTest;
  */
 final class RulesExcluded
 {
+    /** @var string[] */
+    private array $rulesExcluded;
+
     /**
-     * @param string[] $rulesExcluded
+     * @param PqsConfiguration|string[] $configuration
      */
-    public function __construct(private array $rulesExcluded)
+    public function __construct(PqsConfiguration|array $configuration)
     {
+        $this->rulesExcluded = match (true) {
+            $configuration instanceof PqsConfiguration => $configuration->getRulesExcluded(),
+            default => $configuration,
+        };
     }
 
     /**

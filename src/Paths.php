@@ -22,11 +22,8 @@ namespace Ixnode\PhpQualitySuite;
  */
 class Paths
 {
-    private Parameters $rectorParameters;
-
-    public function __construct()
+    public function __construct(private Parameters $parameters)
     {
-        $this->rectorParameters = new Parameters();
     }
 
     /**
@@ -36,7 +33,7 @@ class Paths
      */
     public function getAll(): array
     {
-        return array_values($this->rectorParameters->getPathsIncluded());
+        return array_values($this->parameters->getPathsIncluded());
     }
 
     /**
@@ -46,7 +43,7 @@ class Paths
      */
     public function getOnly(string ...$keys): array
     {
-        return array_values(array_intersect_key($this->rectorParameters->getPathsIncluded(), array_flip($keys)));
+        return array_values(array_intersect_key($this->parameters->getPathsIncluded(), array_flip($keys)));
     }
 
     /**
@@ -56,6 +53,6 @@ class Paths
      */
     public function getWithout(string ...$keys): array
     {
-        return array_values(array_diff_key($this->rectorParameters->getPathsIncluded(), array_flip($keys)));
+        return array_values(array_diff_key($this->parameters->getPathsIncluded(), array_flip($keys)));
     }
 }
