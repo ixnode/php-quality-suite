@@ -15,7 +15,7 @@ namespace Ixnode\PhpQualitySuite\Command;
 
 use Ahc\Cli\Input\Command;
 use Exception;
-use Ixnode\PhpQualitySuite\Rector\RectorConfigPrinter;
+use Ixnode\PhpQualitySuite\Rector\RectorConfigPrinterResult;
 use RuntimeException;
 
 /**
@@ -104,32 +104,10 @@ class RunRectorCommand extends Command
 
         fclose($pipes[1]);
 
-        echo PHP_EOL;
-        echo str_repeat('=', RectorConfigPrinter::LENGTH_SEPARATOR).PHP_EOL;
-
-        switch (true) {
-            case $changedFiles <= 0 && $changeableFiles <= 0:
-                echo "No file changeable or changed.".PHP_EOL;
-                break;
-
-            case $changedFiles > 0:
-                echo match (true) {
-                    $changedFiles === 1 => sprintf('Total %d file changed.', $changedFiles),
-                    default => sprintf('Total %d files changed.', $changedFiles),
-                }.PHP_EOL;
-                break;
-
-            case $changeableFiles > 0:
-                echo match (true) {
-                    $changeableFiles === 1 => sprintf('Total %d file changeable.', $changeableFiles),
-                    default => sprintf('Total %d files changeable.', $changeableFiles),
-                }.PHP_EOL;
-                break;
-        }
-
-        echo str_repeat('=', RectorConfigPrinter::LENGTH_SEPARATOR).PHP_EOL;
-        echo PHP_EOL;
-        echo PHP_EOL;
+        (new RectorConfigPrinterResult(
+            changedFiles: $changedFiles,
+            changeableFiles:  $changeableFiles,
+        ))->print();
 
         return proc_close($process);
     }
