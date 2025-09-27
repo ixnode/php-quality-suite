@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.17] - 2025-09-27
+
+* Add rector "withImportNames" rules
+
 ### [0.1.16] - 2025-09-27
 
 * Implement excluded and included rules
