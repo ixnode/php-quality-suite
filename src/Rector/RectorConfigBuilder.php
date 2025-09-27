@@ -90,6 +90,7 @@ final class RectorConfigBuilder
 
         $this->assignConfiguration($rectorConfigBuilder);
         $this->assignPreparedSets($rectorConfigBuilder);
+        $this->assignImportNaming($rectorConfigBuilder);
         $this->assignSymfonySets($rectorConfigBuilder);
 
         return $rectorConfigBuilder;
@@ -204,6 +205,23 @@ final class RectorConfigBuilder
         if (is_int($typeCoverageLevel)) {
             $rectorConfigBuilderVendor->withTypeCoverageLevel($typeCoverageLevel);
         }
+    }
+
+    /**
+     * Assign withImportNames.
+     */
+    private function assignImportNaming(RectorConfigBuilderVendor $rectorConfigBuilderVendor): void
+    {
+        if ($this->parameters->hasRulesIncludedFiltered()) {
+            return;
+        }
+
+        $rectorConfigBuilderVendor->withImportNames(
+            importNames: $this->parameters->getImportName('importNames'),
+            importDocBlockNames: $this->parameters->getImportName('importDocBlockNames'),
+            importShortClasses: $this->parameters->getImportName('importShortClasses'),
+            removeUnusedImports: $this->parameters->getImportName('removeUnusedImports')
+        );
     }
 
     /**

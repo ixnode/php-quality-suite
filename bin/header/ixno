@@ -15,14 +15,17 @@ HEADER1="PHPQualitySuite (PQS)"
 HEADER2="Version: $VERSION"
 HEADER3="Copyright (c) 2025 björn hempel <bjoern@hempel.li>"
 
+START_COLOR='\e[48;2;98;114;164m\e[38;2;248;248;242m'
+END_COLOR='\e[0m'
+
 echo
-printf " ┌───┐ ┌───┐ ┌───┐ ┌───┐  "
+printf "%b ┌───┐ ┌───┐ ┌───┐ ┌───┐ %b " "$START_COLOR" "$END_COLOR"
 printf "$HEADER1"
 echo
-printf " │ I │ │ X │ │ N │ │ O │  "
+printf "%b │ I │ │ X │ │ N │ │ O │ %b " "$START_COLOR" "$END_COLOR"
 printf "$HEADER2"
 echo
-printf " └───┘ └───┘ └───┘ └───┘  "
+printf "%b └───┘ └───┘ └───┘ └───┘ %b " "$START_COLOR" "$END_COLOR"
 printf "$HEADER3"
 echo
 echo

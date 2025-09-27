@@ -46,6 +46,7 @@ class RunRectorCommand extends Command
             ->option('-l,--level [level]', '', 'intval', '')
             ->option('-s,--sets [sets]', '', 'strval', '')
             ->option('-r,--rules [rules]', '', 'strval', '')
+            ->option('-n,--names [names]', '', 'strval', '')
 
             ->option('--with-symfony', '', 'strval', '')
             ->option('--with-symfony-code-quality', '', 'boolval', '')

@@ -66,7 +66,8 @@ final class RectorConfigPrinter
         }
 
         $this->printMain();
-        $this->printDetail();
+        $this->printPreparedSets();
+        $this->printImportNames();
 
         echo PHP_EOL;
         echo PHP_EOL;
@@ -136,9 +137,9 @@ final class RectorConfigPrinter
     }
 
     /**
-     * Print detailed information.
+     * Print detailed prepared set information.
      */
-    private function printDetail(): void
+    private function printPreparedSets(): void
     {
         if (!$this->parameters->isDetails()) {
             return;
@@ -148,28 +149,48 @@ final class RectorConfigPrinter
         echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
         echo "Prepared Set Details".PHP_EOL;
         echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
-        echo sprintf("deadCode:              %s", $this->getRuleState('deadCode')).PHP_EOL;
-        echo sprintf("codeQuality:           %s", $this->getRuleState('codeQuality')).PHP_EOL;
-        echo sprintf("codingStyle:           %s", $this->getRuleState('codingStyle')).PHP_EOL;
-        echo sprintf("typeDeclarations:      %s", $this->getRuleState('typeDeclarations')).PHP_EOL;
-        echo sprintf("privatization:         %s", $this->getRuleState('privatization')).PHP_EOL;
-        echo sprintf("naming:                %s", $this->getRuleState('naming')).PHP_EOL;
-        echo sprintf("instanceOf:            %s", $this->getRuleState('instanceOf')).PHP_EOL;
-        echo sprintf("earlyReturn:           %s", $this->getRuleState('earlyReturn')).PHP_EOL;
-        echo sprintf("strictBooleans:        %s", $this->getRuleState('strictBooleans')).PHP_EOL;
-        echo sprintf("carbon:                %s", $this->getRuleState('carbon')).PHP_EOL;
-        echo sprintf("rectorPreset:          %s", $this->getRuleState('rectorPreset')).PHP_EOL;
-        echo sprintf("phpunitCodeQuality:    %s", $this->getRuleState('phpunitCodeQuality')).PHP_EOL;
-        echo sprintf("doctrineCodeQuality:   %s", $this->getRuleState('doctrineCodeQuality')).PHP_EOL;
-        echo sprintf("symfonyCodeQuality:    %s", $this->getRuleState('symfonyCodeQuality')).PHP_EOL;
-        echo sprintf("symfonyConfigs:        %s", $this->getRuleState('symfonyConfigs')).PHP_EOL;
+        echo sprintf("deadCode:              %s", $this->getPreparedSetState('deadCode')).PHP_EOL;
+        echo sprintf("codeQuality:           %s", $this->getPreparedSetState('codeQuality')).PHP_EOL;
+        echo sprintf("codingStyle:           %s", $this->getPreparedSetState('codingStyle')).PHP_EOL;
+        echo sprintf("typeDeclarations:      %s", $this->getPreparedSetState('typeDeclarations')).PHP_EOL;
+        echo sprintf("privatization:         %s", $this->getPreparedSetState('privatization')).PHP_EOL;
+        echo sprintf("naming:                %s", $this->getPreparedSetState('naming')).PHP_EOL;
+        echo sprintf("instanceOf:            %s", $this->getPreparedSetState('instanceOf')).PHP_EOL;
+        echo sprintf("earlyReturn:           %s", $this->getPreparedSetState('earlyReturn')).PHP_EOL;
+        echo sprintf("strictBooleans:        %s", $this->getPreparedSetState('strictBooleans')).PHP_EOL;
+        echo sprintf("carbon:                %s", $this->getPreparedSetState('carbon')).PHP_EOL;
+        echo sprintf("rectorPreset:          %s", $this->getPreparedSetState('rectorPreset')).PHP_EOL;
+        echo sprintf("phpunitCodeQuality:    %s", $this->getPreparedSetState('phpunitCodeQuality')).PHP_EOL;
+        echo sprintf("doctrineCodeQuality:   %s", $this->getPreparedSetState('doctrineCodeQuality')).PHP_EOL;
+        echo sprintf("symfonyCodeQuality:    %s", $this->getPreparedSetState('symfonyCodeQuality')).PHP_EOL;
+        echo sprintf("symfonyConfigs:        %s", $this->getPreparedSetState('symfonyConfigs')).PHP_EOL;
         echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
     }
 
     /**
-     * Returns the printable rule property (state).
+     * Print detailed import name information.
      */
-    private function getRuleState(string $key): string
+    private function printImportNames(): void
+    {
+        if (!$this->parameters->isDetails()) {
+            return;
+        }
+
+        echo PHP_EOL;
+        echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
+        echo "Import Names Details".PHP_EOL;
+        echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
+        echo sprintf("importNames:           %s", $this->getImportNameState('importNames')).PHP_EOL;
+        echo sprintf("importDocBlockNames:   %s", $this->getImportNameState('importDocBlockNames')).PHP_EOL;
+        echo sprintf("importShortClasses:    %s", $this->getImportNameState('importShortClasses')).PHP_EOL;
+        echo sprintf("removeUnusedImports:   %s", $this->getImportNameState('removeUnusedImports')).PHP_EOL;
+        echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
+    }
+
+    /**
+     * Returns the printable prepared set property (state).
+     */
+    private function getPreparedSetState(string $key): string
     {
         $valueOrLevel = $this->parameters->getPreparedSetOrPreparedSetLevel($key);
 
@@ -178,5 +199,13 @@ final class RectorConfigPrinter
         }
 
         return 'Level: '.$valueOrLevel;
+    }
+
+    /**
+     * Returns the printable prepared set property (state).
+     */
+    private function getImportNameState(string $key): string
+    {
+        return $this->parameters->getImportName($key) ? 'Active' : 'Not active';
     }
 }

@@ -15,7 +15,7 @@ namespace Ixnode\PhpQualitySuite;
 
 use InvalidArgumentException;
 use Ixnode\PhpQualitySuite\Configuration\PqsConfiguration;
-use Ixnode\PhpQualitySuite\Configuration\Rules\RulesExcluded;
+use Ixnode\PhpQualitySuite\Configuration\Scope;
 use Rector\Symfony\Set\SymfonySetList;
 
 /**
@@ -27,8 +27,7 @@ use Rector\Symfony\Set\SymfonySetList;
  */
 final class Parameters
 {
-    /** @var array<string, bool>
-     */
+    /** @var array<string, bool> */
     public const DEFAULT_PREPARED_SETS = [
         'all' => false,
         'deadCode' => false,
@@ -65,6 +64,15 @@ final class Parameters
         'doctrineCodeQuality' => null,
         'symfonyCodeQuality' => null,
         'symfonyConfigs' => null,
+    ];
+
+    /** @var array<string, bool> */
+    public const DEFAULT_IMPORT_NAMES = [
+        'all' => false,
+        'importNames' => false,
+        'importDocBlockNames' => false,
+        'importShortClasses' => false,
+        'removeUnusedImports' => false,
     ];
 
     private const ALLOWED_PREPARED_SET_KEYS_WITH_LEVELS = ['deadCode', 'codeQuality', 'codingStyle', 'typeDeclarations'];
@@ -104,19 +112,20 @@ final class Parameters
     private const ARGUMENT_MAPPING = [
         /* [env-key, has-value, remove-argument, scope-of-validity] */
 
-        'include'                            => ['PQS_INCLUDE',                            true,  true,  ['rector']],
-        'level'                              => ['PQS_LEVEL',                              true,  true,  ['rector']],
-        'sets'                               => ['PQS_SETS',                               true,  true,  ['rector']],
-        'rules'                              => ['PQS_RULES',                              true,  true,  ['rector']],
+        'include'                            => ['PQS_INCLUDE',                            true,  true,  [Scope::RECTOR]],
+        'level'                              => ['PQS_LEVEL',                              true,  true,  [Scope::RECTOR]],
+        'sets'                               => ['PQS_SETS',                               true,  true,  [Scope::RECTOR]],
+        'rules'                              => ['PQS_RULES',                              true,  true,  [Scope::RECTOR]],
+        'names'                              => ['PQS_NAMES',                              true,  true,  [Scope::RECTOR]],
 
-        'with-symfony'                       => ['PQS_WITH_SYMFONY',                       true,  true,  ['rector']],
-        'with-symfony-code-quality'          => ['PQS_WITH_SYMFONY_CODE_QUALITY',          false, true,  ['rector']],
-        'with-symfony-constructor-injection' => ['PQS_WITH_SYMFONY_CONSTRUCTOR_INJECTION', false, true,  ['rector']],
+        'with-symfony'                       => ['PQS_WITH_SYMFONY',                       true,  true,  [Scope::RECTOR]],
+        'with-symfony-code-quality'          => ['PQS_WITH_SYMFONY_CODE_QUALITY',          false, true,  [Scope::RECTOR]],
+        'with-symfony-constructor-injection' => ['PQS_WITH_SYMFONY_CONSTRUCTOR_INJECTION', false, true,  [Scope::RECTOR]],
 
-        'details'                            => ['PQS_DETAILS',                            false, true,  ['rector']],
-        'dry-run'                            => ['PQS_DRY_RUN',                            false, false, ['rector']],
+        'details'                            => ['PQS_DETAILS',                            false, true,  [Scope::RECTOR]],
+        'dry-run'                            => ['PQS_DRY_RUN',                            false, false, [Scope::RECTOR]],
 
-        'type'                               => ['PQS_TYPE',                               true,  true,  ['rector']],
+        'type'                               => ['PQS_TYPE',                               true,  true,  [Scope::RECTOR]],
     ];
 
     private PqsConfiguration $configuration;
@@ -139,6 +148,9 @@ final class Parameters
 
     /** @var string[] */
     private array $rules;
+
+    /** @var array<string, bool> */
+    private array $importNames;
 
     private string|null $withSymfony = null;
 
@@ -304,27 +316,27 @@ final class Parameters
      *
      * Parameter: -s,--sets
      *
-     * @param array<string, bool> $defaultRules
+     * @param array<string, bool> $defaultPreparedSets
      */
-    public function getPreparedSet(string $key, array $defaultRules = self::DEFAULT_PREPARED_SETS): bool
+    public function getPreparedSet(string $key, array $defaultPreparedSets = self::DEFAULT_PREPARED_SETS): bool
     {
-        $ruleLevel = $this->getPreparedSetLevel($key);
+        $preparedSetLevel = $this->getPreparedSetLevel($key);
 
-        if (!is_null($ruleLevel)) {
+        if (!is_null($preparedSetLevel)) {
             return false;
         }
 
-        $rules = $this->getPreparedSets($defaultRules);
+        $preparedSets = $this->getPreparedSets($defaultPreparedSets);
 
-        if ($rules['all'] === true) {
+        if ($preparedSets['all'] === true) {
             return true;
         }
 
-        if (!array_key_exists($key, $rules)) {
-            throw new InvalidArgumentException('Invalid rule key: '.$key);
+        if (!array_key_exists($key, $preparedSets)) {
+            throw new InvalidArgumentException('Invalid prepared set key: '.$key);
         }
 
-        return $rules[$key];
+        return $preparedSets[$key];
     }
 
     /**
@@ -332,17 +344,17 @@ final class Parameters
      *
      * Parameter: -s,--sets
      *
-     * @param array<string, int|null> $defaultRuleLevels
+     * @param array<string, int|null> $defaultPreparedSetLevels
      */
-    public function getPreparedSetLevel(string $key, array $defaultRuleLevels = self::DEFAULT_PREPARED_SET_LEVELS): int|null
+    public function getPreparedSetLevel(string $key, array $defaultPreparedSetLevels = self::DEFAULT_PREPARED_SET_LEVELS): int|null
     {
-        $ruleLevels = $this->getPreparedSetLevels($defaultRuleLevels);
+        $preparedSetLevels = $this->getPreparedSetLevels($defaultPreparedSetLevels);
 
-        if (!array_key_exists($key, $ruleLevels)) {
-            throw new InvalidArgumentException('Invalid rule level key: '.$key);
+        if (!array_key_exists($key, $preparedSetLevels)) {
+            throw new InvalidArgumentException('Invalid prepared set level key: '.$key);
         }
 
-        return $ruleLevels[$key];
+        return $preparedSetLevels[$key];
     }
 
     /**
@@ -350,22 +362,22 @@ final class Parameters
      *
      * Parameter: -s,--sets
      *
-     * @param array<string, bool> $defaultRules
-     * @param array<string, int|null> $defaultRuleLevels
+     * @param array<string, bool> $defaultPreparedSets
+     * @param array<string, int|null> $defaultPreparedSetLevels
      */
     public function getPreparedSetOrPreparedSetLevel(
         string $key,
-        array $defaultRules = self::DEFAULT_PREPARED_SETS,
-        array $defaultRuleLevels = self::DEFAULT_PREPARED_SET_LEVELS
+        array $defaultPreparedSets = self::DEFAULT_PREPARED_SETS,
+        array $defaultPreparedSetLevels = self::DEFAULT_PREPARED_SET_LEVELS
     ): int|bool
     {
-        $ruleLevel = $this->getPreparedSetLevel($key, $defaultRuleLevels);
+        $preparedSetLevel = $this->getPreparedSetLevel($key, $defaultPreparedSetLevels);
 
-        if (!is_null($ruleLevel)) {
-            return $ruleLevel;
+        if (!is_null($preparedSetLevel)) {
+            return $preparedSetLevel;
         }
 
-        return $this->getPreparedSet($key, $defaultRules);
+        return $this->getPreparedSet($key, $defaultPreparedSets);
     }
 
     /**
@@ -378,6 +390,40 @@ final class Parameters
     public function getRules(array $default = []): array
     {
         return $this->rules ?? $default;
+    }
+
+    /**
+     * Returns the import names list analyzed by rector.
+     *
+     * Parameter: -n,--names
+     *
+     * @return array<string, bool>
+     */
+    public function getImportNames(array $default = self::DEFAULT_IMPORT_NAMES): array
+    {
+        return $this->importNames ?? $default;
+    }
+
+    /**
+     * Returns the import name (active or not).
+     *
+     * Parameter: -n,--names
+     *
+     * @param array<string, bool> $defaultImportNames
+     */
+    public function getImportName(string $key, array $defaultImportNames = self::DEFAULT_IMPORT_NAMES): bool
+    {
+        $importNames = $this->getImportNames($defaultImportNames);
+
+        if ($importNames['all'] === true) {
+            return true;
+        }
+
+        if (!array_key_exists($key, $importNames)) {
+            throw new InvalidArgumentException('Invalid import name key: '.$key);
+        }
+
+        return $importNames[$key];
     }
 
     /**
@@ -514,6 +560,9 @@ final class Parameters
                 case 'rules':
                     $this->adoptRules($value);
                     break;
+                case 'names':
+                    $this->adoptImportNames($value);
+                    break;
 
                 case 'with-symfony':
                     $this->adoptSymfonyVersion($value);
@@ -565,7 +614,7 @@ final class Parameters
     }
 
     /**
-     * Adopt argument "rules".
+     * Adopt argument "sets".
      */
     private function adoptPreparedSets(string $value): void
     {
@@ -581,7 +630,7 @@ final class Parameters
 
             if (!in_array($key, $allowed, true)) {
                 throw new InvalidArgumentException(sprintf(
-                    'Invalid rule key "%s". Allowed keys: %s',
+                    'Invalid prepared set key "%s". Allowed keys: %s',
                     $key,
                     implode(', ', $allowed)
                 ));
@@ -590,7 +639,7 @@ final class Parameters
             if ($level !== null) {
                 if (!in_array($key, self::ALLOWED_PREPARED_SET_KEYS_WITH_LEVELS, true)) {
                     throw new InvalidArgumentException(
-                        sprintf('Rule key "%s" does not accept levels (got "%s")', $key, $level)
+                        sprintf('Prepared set key "%s" does not accept levels (got "%s")', $key, $level)
                     );
                 }
 
@@ -622,6 +671,31 @@ final class Parameters
         }
 
         $this->rules = $list;
+    }
+
+    /**
+     * Adopt argument "names".
+     */
+    private function adoptImportNames(string $value): void
+    {
+        $list = $this->splitList($value);
+
+        $allowed = array_keys(self::DEFAULT_IMPORT_NAMES);
+
+        $this->importNames = self::DEFAULT_IMPORT_NAMES;
+
+        foreach ($list as $key) {
+
+            if (!in_array($key, $allowed, true)) {
+                throw new InvalidArgumentException(sprintf(
+                    'Invalid import name key "%s". Allowed keys: %s',
+                    $key,
+                    implode(', ', $allowed)
+                ));
+            }
+
+            $this->importNames[$key] = true;
+        }
     }
 
     /**
