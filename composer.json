@@ -29,13 +29,26 @@
         "rector/rector": "^2.1"
     },
     "require-dev": {
-
+        "phpunit/phpunit": "^10.5"
     },
     "bin": [
         "bin/php-quality-suite"
     ],
     "scripts": {
-        "analyze": "vendor/bin/rector process --config=rector/bootstrap.php"
+        "ixno:header": "bin/header/ixno",
+
+        "rector": "bin/header/rector 'bin/php-quality-suite rector --include=src,tests --dry-run' 'Rector'",
+        "phpunit": "bin/header/phpunit 'phpunit -d memory_limit=512M --configuration phpunit.xml' 'Unit'",
+
+        ".test": [
+            "@ixno:header",
+            "@rector",
+            "@phpunit"
+        ],
+
+        "test": [
+            "composer .test && bin/header/success || bin/header/error"
+        ]
     },
     "scripts-descriptions": {
 
