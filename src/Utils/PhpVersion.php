@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Ixnode\PhpQualitySuite\Utils;
 
+use InvalidArgumentException;
+
 /**
  * Class PhpVersion
  *
@@ -22,10 +24,16 @@ namespace Ixnode\PhpQualitySuite\Utils;
  */
 final class PhpVersion
 {
+    private int $phpVersion;
+
     /**
      */
-    public function __construct(private int $phpVersion)
+    public function __construct(int|string $phpVersion)
     {
+        $this->phpVersion = match (true) {
+            is_string($phpVersion) => $this->parsePhpVersion($phpVersion),
+            default => $phpVersion,
+        };
     }
 
     /**
@@ -57,5 +65,23 @@ final class PhpVersion
         $minor = intdiv($this->phpVersion % 10000, 100);
 
         return $major + $minor * 0.1;
+    }
+
+    /**
+     * Parses a given string PHP version.
+     */
+    private function parsePhpVersion(string $phpVersion): int
+    {
+        $parts = explode('.', $phpVersion);
+
+        if (count($parts) < 3) {
+            throw new InvalidArgumentException(
+                sprintf('Invalid PHP version format: "%s". Expected format "X.Y.Z".', $phpVersion)
+            );
+        }
+
+        [$major, $minor, $release] = array_map('intval', array_slice($parts, 0, 3));
+
+        return $major * 10000 + $minor * 100 + $release;
     }
 }

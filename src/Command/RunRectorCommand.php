@@ -15,6 +15,7 @@ namespace Ixnode\PhpQualitySuite\Command;
 
 use Ahc\Cli\Input\Command;
 use Exception;
+use Ixnode\PhpQualitySuite\Rector\RectorConfigPrinter;
 use RuntimeException;
 
 /**
@@ -67,7 +68,7 @@ class RunRectorCommand extends Command
         $forwardArgs = array_slice($_SERVER['argv'], 2);
 
         $cmd = array_merge(
-            ['php', 'vendor/bin/rector', 'process', '--config='.__DIR__.'/../../rector/bootstrap.php', '--type=rector'],
+            ['php', 'vendor/bin/rector', 'process', '--ansi', '--config='.__DIR__.'/../../rector/bootstrap.php', '--type=rector'],
             $forwardArgs
         );
 
@@ -75,15 +76,60 @@ class RunRectorCommand extends Command
             $cmd,
             [
                 0 => STDIN,
-                1 => STDOUT,
+                1 => ['pipe', 'w'],
                 2 => STDERR,
             ],
             $pipes
         );
 
         if (!is_resource($process)) {
-            throw new RuntimeException('Failed to run composer');
+            throw new RuntimeException('Failed to run vendor/bin/rector');
         }
+
+        $changedFiles = 0;
+        $changeableFiles = 0;
+
+        while (!feof($pipes[1])) {
+            $current = fread($pipes[1], 8192);
+            echo $current;
+
+            if (preg_match('/\[(OK)] (\d+) (file|files) has been changed/', $current, $m)) {
+                $changedFiles += (int) $m[2];
+            }
+
+            if (preg_match('/\[(OK)] (\d+) (file|files) would have been changed/', $current, $m)) {
+                $changeableFiles += (int) $m[2];
+            }
+        }
+
+        fclose($pipes[1]);
+
+        echo PHP_EOL;
+        echo str_repeat('=', RectorConfigPrinter::LENGTH_SEPARATOR).PHP_EOL;
+
+        switch (true) {
+            case $changedFiles <= 0 && $changeableFiles <= 0:
+                echo "No file changeable or changed.".PHP_EOL;
+                break;
+
+            case $changedFiles > 0:
+                echo match (true) {
+                    $changedFiles === 1 => sprintf('Total %d file changed.', $changedFiles),
+                    default => sprintf('Total %d files changed.', $changedFiles),
+                }.PHP_EOL;
+                break;
+
+            case $changeableFiles > 0:
+                echo match (true) {
+                    $changeableFiles === 1 => sprintf('Total %d file changeable.', $changeableFiles),
+                    default => sprintf('Total %d files changeable.', $changeableFiles),
+                }.PHP_EOL;
+                break;
+        }
+
+        echo str_repeat('=', RectorConfigPrinter::LENGTH_SEPARATOR).PHP_EOL;
+        echo PHP_EOL;
+        echo PHP_EOL;
 
         return proc_close($process);
     }

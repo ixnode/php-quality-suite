@@ -31,7 +31,7 @@ final class RectorConfigPrinter
 
     private bool $debug = false;
 
-    private const LENGTH_SEPARATOR = 50;
+    public const LENGTH_SEPARATOR = 50;
 
     /**
      */
@@ -85,7 +85,8 @@ final class RectorConfigPrinter
     private function printMain(): void
     {
         /* A */
-        $phpVersion = new PhpVersion(ComposerJsonPhpVersionResolver::resolveFromCwdOrFail());
+        $phpVersionRector = new PhpVersion(ComposerJsonPhpVersionResolver::resolveFromCwdOrFail());
+        $phpVersionRunning = new PhpVersion(phpversion());
 
         /* B */
         $includedPaths = $this->parameters->getInclude();
@@ -114,12 +115,13 @@ final class RectorConfigPrinter
         echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
 
         /* A */
-        echo sprintf("With php version:                   %s (%.1f)", $phpVersion->getString('%d.%d.x'), $phpVersion->getNumber()).PHP_EOL;
+        echo sprintf('Running PHP version:                %s (%.1f)', $phpVersionRunning->getString(), $phpVersionRunning->getNumber()).PHP_EOL;
+        echo sprintf('Rector analyse PHP version:         %s (%.1f)', $phpVersionRector->getString('%d.%d.x'), $phpVersionRector->getNumber()).PHP_EOL;
         echo str_repeat('-', self::LENGTH_SEPARATOR).PHP_EOL;
 
         /* B */
         echo sprintf("Included paths:                     %s", $includedPaths === [] ? 'all' : implode(', ', $includedPaths)).PHP_EOL;
-        echo sprintf("Level:                              %s", $level ?? 'N/A').PHP_EOL;
+        echo sprintf("Level:                              %s", $level ?? 'max').PHP_EOL;
         echo sprintf("Sets:                               %s", $activePreparedSets === [] ? 'N/A' : implode(', ', $activePreparedSets)).PHP_EOL;
         echo sprintf("Included rules:                     %s", $includedRules === [] ? 'N/A' : implode(', ', $includedRules)).PHP_EOL;
         echo str_repeat('-', self::LENGTH_SEPARATOR).PHP_EOL;
