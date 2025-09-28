@@ -41,9 +41,11 @@ final class RectorBootstrap
      */
     public function run(): RectorConfigBuilderVendor
     {
+        $rectorConfigBuilder = $this->rectorConfigBuilder->getRectorConfigBuilder();
+
         (new RectorConfigPrinter($this->rectorConfigBuilder))->print();
 
-        return $this->rectorConfigBuilder->getRectorConfigBuilder();
+        return $rectorConfigBuilder;
     }
 }
 

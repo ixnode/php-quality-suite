@@ -40,7 +40,7 @@ class RunRectorCommand extends Command
      */
     public function __construct()
     {
-        parent::__construct('rector', 'Run the rector command and analyze code.');
+        parent::__construct('rector', 'Run the Rector command and analyze code.');
 
         $this
             ->option('-i,--include [include]', '', 'strval', '')

@@ -21,6 +21,7 @@ use Rector\Configuration\RectorConfigBuilder as RectorConfigBuilderVendor;
 use Rector\Exception\Configuration\InvalidConfigurationException;
 use Rector\Php\PhpVersionResolver\ComposerJsonPhpVersionResolver;
 use Rector\Symfony\Set\SymfonySetList;
+use ReflectionException;
 
 /**
  * Class RectorConfigBuilder
@@ -29,8 +30,10 @@ use Rector\Symfony\Set\SymfonySetList;
  * @version 1.0.0 (2025-09-20)
  * @since 1.0.0 (2025-09-20) First version
  */
-final class RectorConfigBuilder
+class RectorConfigBuilder
 {
+    private RectorConfigBuilderVendor|null $rectorConfigBuilder = null;
+
     private Parameters $parameters;
 
     private Paths $paths;
@@ -47,7 +50,7 @@ final class RectorConfigBuilder
     /** @var string[]|null $rulesExcluded */
     private array|null $rulesExcluded = null;
 
-    private int|false|null $phpVersion = false;
+    private int|false|null $level = false;
 
     private const PATH_APP_KERNEL_DEV_DEBUG_CONTAINER = "var/cache/dev/App_KernelDevDebugContainer.xml";
 
@@ -57,6 +60,31 @@ final class RectorConfigBuilder
     {
         $this->parameters = new Parameters();
         $this->paths = new Paths($this->parameters);
+    }
+
+    /**
+     * Returns the ready configured RectorConfigBuilder.
+     *
+     * @throws InvalidConfigurationException
+     */
+    public function getRectorConfigBuilder(): RectorConfigBuilderVendor
+    {
+        if (!is_null($this->rectorConfigBuilder)) {
+            return $this->rectorConfigBuilder;
+        }
+
+        $this->rectorConfigBuilder = RectorConfig::configure();
+
+        $this->addPaths();
+        $this->addRules();
+        $this->addPhpLevel();
+
+        $this->assignConfiguration($this->rectorConfigBuilder);
+        $this->assignPreparedSets($this->rectorConfigBuilder);
+        $this->assignImportNaming($this->rectorConfigBuilder);
+        $this->assignSymfonySets($this->rectorConfigBuilder);
+
+        return $this->rectorConfigBuilder;
     }
 
     /**
@@ -75,25 +103,9 @@ final class RectorConfigBuilder
         return $this->paths;
     }
 
-    /**
-     * Returns the ready configured RectorConfigBuilder.
-     *
-     * @throws InvalidConfigurationException
-     */
-    public function getRectorConfigBuilder(): RectorConfigBuilderVendor
+    public function getLevel(): bool|int|null
     {
-        $rectorConfigBuilder = RectorConfig::configure();
-
-        $this->addPaths();
-        $this->addRules();
-        $this->addPhpLevel();
-
-        $this->assignConfiguration($rectorConfigBuilder);
-        $this->assignPreparedSets($rectorConfigBuilder);
-        $this->assignImportNaming($rectorConfigBuilder);
-        $this->assignSymfonySets($rectorConfigBuilder);
-
-        return $rectorConfigBuilder;
+        return $this->level;
     }
 
     /**
@@ -130,11 +142,11 @@ final class RectorConfigBuilder
     private function addPhpLevel(): void
     {
         if ($this->parameters->hasRulesIncludedFiltered()) {
-            $this->phpVersion = false;
+            $this->level = false;
             return;
         }
 
-        $this->phpVersion = $this->parameters->getLevel();
+        $this->level = $this->parameters->getLevel();
     }
 
     /**
@@ -151,10 +163,10 @@ final class RectorConfigBuilder
             $rectorConfigBuilderVendor->withRules($this->rulesIncluded);
         }
 
-        if ($this->phpVersion !== false) {
+        if ($this->level !== false) {
             match (true) {
-                is_null($this->phpVersion) => $rectorConfigBuilderVendor->withPhpSets(),
-                default => $rectorConfigBuilderVendor->withPhpLevel($this->phpVersion),
+                is_null($this->level) => $rectorConfigBuilderVendor->withPhpSets(),
+                default => $rectorConfigBuilderVendor->withPhpLevel($this->level),
             };
         }
     }

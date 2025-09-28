@@ -17,6 +17,7 @@ use Ixnode\PhpQualitySuite\Parameters;
 use Ixnode\PhpQualitySuite\Utils\PhpVersion;
 use Rector\Exception\Configuration\InvalidConfigurationException;
 use Rector\Php\PhpVersionResolver\ComposerJsonPhpVersionResolver;
+use ReflectionException;
 
 /**
  * Class RectorConfigPrinter
@@ -35,7 +36,7 @@ final class RectorConfigPrinter
 
     /**
      */
-    public function __construct(RectorConfigBuilder $rectorConfigBuilder)
+    public function __construct(private RectorConfigBuilder $rectorConfigBuilder)
     {
         $this->parameters = $rectorConfigBuilder->getParameters();
     }
@@ -54,7 +55,7 @@ final class RectorConfigPrinter
      */
     public function print(): void
     {
-        $printed = (int)getenv('RECTOR_OVERVIEW_PRINTED');
+        $printed = (int) getenv('RECTOR_OVERVIEW_PRINTED');
 
         if ($printed >= ($this->debug ? 2 : 1)) {
 
@@ -68,6 +69,7 @@ final class RectorConfigPrinter
         $this->printMain();
         $this->printPreparedSets();
         $this->printImportNames();
+        $this->printRules();
 
         echo PHP_EOL;
         echo PHP_EOL;
@@ -111,7 +113,7 @@ final class RectorConfigPrinter
 
         echo PHP_EOL;
         echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
-        echo "Rector Overview".PHP_EOL;
+        echo "I) Rector Overview".PHP_EOL;
         echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
 
         /* A */
@@ -149,7 +151,7 @@ final class RectorConfigPrinter
 
         echo PHP_EOL;
         echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
-        echo "Prepared Set Details".PHP_EOL;
+        echo "II) Prepared Set Details".PHP_EOL;
         echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
         echo sprintf("deadCode:              %s", $this->getPreparedSetState('deadCode')).PHP_EOL;
         echo sprintf("codeQuality:           %s", $this->getPreparedSetState('codeQuality')).PHP_EOL;
@@ -180,12 +182,58 @@ final class RectorConfigPrinter
 
         echo PHP_EOL;
         echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
-        echo "Import Names Details".PHP_EOL;
+        echo "III) Import Names Details".PHP_EOL;
         echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
         echo sprintf("importNames:           %s", $this->getImportNameState('importNames')).PHP_EOL;
         echo sprintf("importDocBlockNames:   %s", $this->getImportNameState('importDocBlockNames')).PHP_EOL;
         echo sprintf("importShortClasses:    %s", $this->getImportNameState('importShortClasses')).PHP_EOL;
         echo sprintf("removeUnusedImports:   %s", $this->getImportNameState('removeUnusedImports')).PHP_EOL;
+        echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
+    }
+
+    /**
+     * Print detailed rule information.
+     *
+     * @throws InvalidConfigurationException
+     * @throws ReflectionException
+     */
+    private function printRules(): void
+    {
+        if (!$this->parameters->isDetails()) {
+            return;
+        }
+
+        $rectorConfigDebugger = new RectorConfigDebugger(
+            rectorConfigBuilder: $this->rectorConfigBuilder->getRectorConfigBuilder(),
+            level: $this->rectorConfigBuilder->getLevel(),
+        );
+
+        $rules = $rectorConfigDebugger->getRules();
+
+        echo PHP_EOL;
+        echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
+        echo "IV) Applied Rule Details".PHP_EOL;
+        echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
+
+        echo PHP_EOL;
+        switch (true) {
+            case count($rules) <= 0:
+                echo "No rule applied.".PHP_EOL;
+                break;
+
+            default:
+                $width = max(array_map('strlen', $rules));
+                echo "┌───────┬─". str_repeat("─", $width)."─┐".PHP_EOL;
+                echo "│ Level │ ". str_pad("Class", $width)." │".PHP_EOL;
+                echo "│───────┼─". str_repeat("─", $width)."─┤".PHP_EOL;
+                foreach ($rules as $level => $rule) {
+                    echo sprintf("│ %5d │ %-{$width}s │", $level, $rule).PHP_EOL;
+                }
+                echo "└───────┴─". str_repeat("─", $width)."─┘".PHP_EOL;
+                break;
+        }
+        echo PHP_EOL;
+
         echo str_repeat('=', self::LENGTH_SEPARATOR).PHP_EOL;
     }
 
