@@ -1,6 +1,6 @@
-## 4. Best Practices with Rector
+# Best Practices with Rector
 
-### Best Practices with PHP
+## Best Practices with PHP
 
 To run your first analysis, start with a safe, minimal check:
 
@@ -19,8 +19,6 @@ This will give you an overview of potential issues in your codebase without appl
 <details>
 
 <summary>Example output:</summary>
-
-### You can add a header
 
 ```bash
 Rector Overview
@@ -57,7 +55,7 @@ Applied rules:
 
 </details>
 
-#### Incremental approach
+### Incremental approach
 
 Increase the `--level` step by step (from 0 up to 20).
 
@@ -73,7 +71,7 @@ vendor/bin/php-quality-suite rector --include=src,tests --level=20 --dry-run
 
 This incremental approach ensures that you can review and commit changes in small, controlled batches.
 
-#### Target PHP version
+### Target PHP version
 
 The PHP Quality Suite analyzes your code against the PHP version specified in your project’s `composer.json`.
 
@@ -102,12 +100,12 @@ Then rerun the analysis with `--level=0` for the new target version, and gradual
 
 This ensures your code is cleaned up, compatible, and ready for the upgrade.
 
-### Best Practices with Symfony
+## Best Practices with Symfony
 
 The PHP Quality Suite integrates Rector’s Symfony sets to automatically apply framework-specific best practices and
 upgrade rules. This allows you to modernize and improve your Symfony codebase with minimal effort.
 
-#### Run checks against a specific Symfony version
+### Run checks against a specific Symfony version
 
 The following command checks your codebase against the Symfony rules for the version you specify.
 
@@ -121,7 +119,7 @@ vendor/bin/php-quality-suite rector --with-symfony=<target-version> --dry-run
 |-----------------------------------|---------------------------------------------------------------------------------|
 | `--with-symfony=<target-version>` | Applies Rector’s rules for a specific Symfony version (e.g. `6.0`, `6.1`, etc.) |
 
-### Add Symfony-specific improvements
+## Add Symfony-specific improvements
 
 In addition to version-specific upgrades, you can enable extra checks that focus on code quality and best practices:
 
@@ -143,7 +141,7 @@ vendor/bin/php-quality-suite rector \
   or property injection. This makes classes easier to test, reduces hidden dependencies, and aligns with modern Symfony
   best practices.
 
-### Upgrading Symfony via Composer
+## Upgrading Symfony via Composer
 
 When upgrading Symfony, you need to adjust all Symfony-related packages in your project’s `composer.json` to match the
 target version you want to migrate to:

@@ -52,6 +52,7 @@ final class RectorConfigPrinter
      * Prints the current rector setup.
      *
      * @throws InvalidConfigurationException
+     * @throws ReflectionException
      */
     public function print(): void
     {

@@ -38,20 +38,20 @@ final class RectorConfigPrinterResult
 
         switch (true) {
             case $this->changedFiles <= 0 && $this->changeableFiles <= 0:
-                echo "No file changeable or changed.".PHP_EOL;
+                echo "No file is changeable or was changed.".PHP_EOL;
                 break;
 
             case $this->changedFiles > 0:
                 echo match (true) {
-                        $this->changedFiles === 1 => sprintf('Total %d file changed.', $this->changedFiles),
-                        default => sprintf('Total %d files changed.', $this->changedFiles),
+                        $this->changedFiles === 1 => sprintf('Total %d file was changed.', $this->changedFiles),
+                        default => sprintf('Total %d files were changed.', $this->changedFiles),
                     }.PHP_EOL;
                 break;
 
             case $this->changeableFiles > 0:
                 echo match (true) {
-                        $this->changeableFiles === 1 => sprintf('Total %d file changeable.', $this->changeableFiles),
-                        default => sprintf('Total %d files changeable.', $this->changeableFiles),
+                        $this->changeableFiles === 1 => sprintf('Total %d file is changeable.', $this->changeableFiles),
+                        default => sprintf('Total %d files are changeable.', $this->changeableFiles),
                     }.PHP_EOL;
                 break;
         }

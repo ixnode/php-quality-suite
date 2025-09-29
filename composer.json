@@ -39,10 +39,12 @@
 
         "rector": "bin/header/rector 'bin/php-quality-suite rector --include=src,tests --dry-run' 'Rector'",
         "phpunit": "bin/header/phpunit 'phpunit -d memory_limit=512M --configuration phpunit.xml' 'Unit'",
+        "phpstan": "bin/header/phpstan 'bin/php-quality-suite phpstan --include=src,tests --level=1' 'PHPStan'",
 
         ".test": [
             "@ixno:header",
             "@phpunit",
+            "@phpstan",
             "@rector"
         ],
 

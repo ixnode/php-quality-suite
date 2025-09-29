@@ -1,0 +1,1 @@
+../src/PhpStan/PhpStanBootstrap.php

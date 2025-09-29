@@ -21,6 +21,7 @@ if (!file_exists($autoload)) {
 require $autoload;
 
 use Ahc\Cli\Application;
+use Ixnode\PhpQualitySuite\Command\RunPhpStanCommand;
 use Ixnode\PhpQualitySuite\Command\RunRectorCommand;
 
 $versionFile = dirname(__DIR__).'/VERSION';
@@ -47,5 +48,6 @@ $versionString = sprintf(
 $app = new Application('PHP Quality Suite', $versionString);
 
 $app->add(new RunRectorCommand());
+$app->add(new RunPhpStanCommand());
 
 $app->handle($_SERVER['argv']);
