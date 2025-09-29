@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.21] - 2025-09-29
+
+* Add first PHPStan implementation
+
 ### [0.1.20] - 2025-09-28
 
 * Add overview of rector/level to `--details` mode
