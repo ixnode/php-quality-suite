@@ -437,6 +437,16 @@ final class Parameters
     }
 
     /**
+     * Returns the wanted symfony version analyzed by rector (as float).
+     *
+     * Parameter: --with-symfony
+     */
+    public function getWithSymfonyAsFloat(float|null $default = null): float|null
+    {
+        return $this->withSymfony ? floatval($this->withSymfony) : $default;
+    }
+
+    /**
      * Returns whether to analyze symfony code quality.
      *
      * Parameter: --with-symfony-code-quality

@@ -128,7 +128,10 @@ class RectorConfigBuilder
         if (!$this->parameters->hasRulesIncludedFiltered()) {
             $phpVersion = new PhpVersion(ComposerJsonPhpVersionResolver::resolveFromCwdOrFail());
 
-            $this->rulesExcluded = $this->parameters->getRulesExcludedFiltered($phpVersion->getNumber());
+            $this->rulesExcluded = $this->parameters->getRulesExcludedFiltered(
+                phpVersion: $phpVersion->getNumber(),
+                symfonyVersion: $this->parameters->getWithSymfonyAsFloat()
+            );
 
             return;
         }
